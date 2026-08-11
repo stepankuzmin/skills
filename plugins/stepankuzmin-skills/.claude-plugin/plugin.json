@@ -1,0 +1,10 @@
+{
+  "name": "stepankuzmin-skills",
+  "version": "0.1.0",
+  "description": "Clarity-first skills for simplifying code, plans, and technical decisions.",
+  "author": {
+    "name": "Stepan Kuzmin"
+  },
+  "repository": "https://github.com/stepankuzmin/skills",
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "stepankuzmin",
+  "description": "Stepan Kuzmin's personal Claude Code plugins",
+  "owner": {
+    "name": "Stepan Kuzmin"
+  },
+  "plugins": [
+    {
+      "name": "stepankuzmin-skills",
+      "source": "./plugins/stepankuzmin-skills",
+      "description": "Clarity-first skills for simplifying code, plans, and technical decisions."
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "stepankuzmin-skills",
+  "version": "0.1.0",
+  "description": "Clarity-first skills for simplifying code, plans, and technical decisions.",
+  "author": {
+    "name": "Stepan Kuzmin",
+    "url": "https://github.com/stepankuzmin"
+  },
+  "homepage": "https://github.com/stepankuzmin/skills",
+  "repository": "https://github.com/stepankuzmin/skills",
+  "license": "MIT",
+  "keywords": [
+    "grug",
+    "code-review",
+    "simplification",
+    "complexity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Stepan Kuzmin Skills",
+    "shortDescription": "Grug-guided simplification and code review",
+    "longDescription": "Apply a practical, clarity-first Grug lens to conversations, plans, architecture, and code. Includes a focused code review workflow for finding unnecessary complexity and proposing simpler alternatives.",
+    "developerName": "Stepan Kuzmin",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://github.com/stepankuzmin/skills",
+    "defaultPrompt": [
+      "Ask grug to simplify this plan",
+      "Give me a grug second opinion",
+      "Run a grug review on this code"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

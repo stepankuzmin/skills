@@ -1,0 +1,21 @@
+{
+  "name": "stepankuzmin",
+  "interface": {
+    "displayName": "Stepan Kuzmin"
+  },
+  "plugins": [
+    {
+      "name": "stepankuzmin-skills",
+      "description": "Clarity-first skills for simplifying code, plans, and technical decisions.",
+      "source": {
+        "source": "local",
+        "path": "./plugins/stepankuzmin-skills"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
