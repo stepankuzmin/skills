@@ -1,0 +1,11 @@
+{
+  "name": "skills",
+  "version": "0.1.0",
+  "description": "Clarity-first skills for simplifying code, plans, and technical decisions.",
+  "private": true,
+  "license": "MIT",
+  "repository": "https://github.com/stepankuzmin/skills",
+  "scripts": {
+    "sync": "node scripts/sync-manifests.mjs"
+  }
+}

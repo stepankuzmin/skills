@@ -40,9 +40,3 @@ directly, e.g. "Ask grug to review X".
 /plugin marketplace add stepankuzmin/skills
 /plugin install stepankuzmin-skills@stepankuzmin
 ```
-
-## Releasing
-
-Bump `version` in both `plugin.json` files together, and keep `description`
-identical across all four manifests (both `marketplace.json` and both
-`plugin.json` files).
