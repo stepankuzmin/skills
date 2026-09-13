@@ -84,15 +84,19 @@ function sync(): void {
 // targets. The openclaw target's is a plain skills/, which is where the plugin
 // already keeps its skills.
 function vendor(...args: string[]): void {
+  // skills also installs into every agent it detects; the plugin ships skills/.
+  // Only the directories this run creates are cleared, so anything already
+  // in the plugin survives, including when the command fails partway.
+  const strays = [".agents", ".claude"]
+    .map((dir) => join(PLUGIN, dir))
+    .filter((dir) => !existsSync(dir));
+
   const run = spawnSync("npx", ["--yes", "skills@latest", ...args], {
     cwd: PLUGIN,
     stdio: "inherit",
   });
 
-  // skills also installs into every agent it detects; the plugin ships skills/.
-  for (const dir of [".agents", ".claude"]) {
-    rmSync(join(PLUGIN, dir), { recursive: true, force: true });
-  }
+  for (const dir of strays) rmSync(dir, { recursive: true, force: true });
 
   if (run.status !== 0) process.exit(run.status ?? 1);
   sync();
