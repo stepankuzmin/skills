@@ -50,9 +50,11 @@ function summarize(skill: string): string {
   const start = lines.findIndex((line) => line.startsWith("description:"));
   if (start === -1) return "";
 
-  // YAML wraps long values onto indented continuation lines; the next
-  // top-level key ends the value.
-  const value = [lines[start].slice("description:".length)];
+  // YAML carries a long value on the indented lines below, either wrapped or
+  // under a block scalar indicator (description: >-) that is not part of it.
+  // The next top-level key ends the value.
+  const head = lines[start].slice("description:".length).trim();
+  const value = [/^[>|][0-9]*[-+]?$/.test(head) ? "" : head];
   for (const line of lines.slice(start + 1)) {
     if (/^\S/.test(line)) break;
     value.push(line);
