@@ -4,13 +4,19 @@ Reusable agents and skills for practical, clarity-first engineering.
 
 The marketplace includes:
 
-- `grug` - applies a simplicity lens to conversations, plans, architecture,
-  documents, and code.
-- `grug-review` - reviews code for unnecessary complexity and proposes concrete
-  simplifications.
-- `code-review` - reviews a diff for correctness bugs and unnecessary
-  complexity, posting only findings backed by a failure scenario or a simpler
-  alternative.
+<!-- skills:start -->
+
+| Skill | Description | Source |
+| --- | --- | --- |
+| [`code-review`](plugins/stepankuzmin-skills/skills/code-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. | this repo |
+| [`grug`](plugins/stepankuzmin-skills/skills/grug/SKILL.md) | Apply Grug's clarity-first simplicity lens to any technical subject, including the current conversation, a plan, document, architecture, design, or code. | this repo |
+| [`grug-review`](plugins/stepankuzmin-skills/skills/grug-review/SKILL.md) | Review code for unnecessary complexity using clarity-first simplification. | this repo |
+| [`uncomplect`](plugins/stepankuzmin-skills/skills/uncomplect/SKILL.md) | Pressure-test a stateful system or replacement design through Rich Hickey's simplicity and complection, Greg Young's deletability, Ousterhout's deep modules, DDD boundaries, typed effects, and explicit lifecycle modeling. | [joelhooks/skills](https://github.com/joelhooks/skills/blob/HEAD/skills/uncomplect/SKILL.md) |
+
+<!-- skills:end -->
+
+Run `npm run sync` after adding, updating, or removing a skill; it regenerates
+the table above from the skills on disk.
 
 ## Install in Codex
 

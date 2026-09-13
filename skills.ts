@@ -4,24 +4,28 @@
 //   ./skills.ts add <source> -s <skill>...     Vendor external skills into the plugin
 //   ./skills.ts update [<skill>]...            Re-fetch vendored skills (default: all)
 //   ./skills.ts remove <skill>...              Drop vendored skills
-//   ./skills.ts sync                           Propagate version and description
+//   ./skills.ts sync                           Propagate version, description, catalog
 //
 // Vendoring is npx skills (https://npmjs.com/package/skills) run inside the
 // plugin, so its own skills-lock.json records what came from where. Every
 // command that touches the plugin ends with a manifest sync.
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const root = import.meta.dirname;
 const PLUGIN = join(root, "plugins/stepankuzmin-skills");
+const SKILLS = join(PLUGIN, "skills");
+const README = join(root, "README.md");
+const START = "<!-- skills:start -->";
+const END = "<!-- skills:end -->";
 
 const USAGE = `usage: skills <command>
 
   add <source> -s <skill>...     Vendor named skills from a source into the plugin
   update [<skill>]...            Re-fetch vendored skills (default: all)
   remove <skill>...              Drop vendored skills
-  sync                           Propagate version and description into the manifests
+  sync                           Propagate version, description, and the README catalog
 
 Sources take any form npx skills accepts: owner/repo, owner/repo#ref,
 a GitHub tree URL, a git URL, or a local path.`;
@@ -37,6 +41,62 @@ const set = (obj: Record<string, unknown>, key: string, value: unknown): boolean
   obj[key] = value;
   return true;
 };
+
+// The first sentence of the skill's frontmatter description.
+function summarize(skill: string): string {
+  const text = readFileSync(join(SKILLS, skill, "SKILL.md"), "utf8");
+  const frontmatter = /^---\n([\s\S]*?)\n---/.exec(text)?.[1] ?? "";
+  const lines = frontmatter.split("\n");
+  const start = lines.findIndex((line) => line.startsWith("description:"));
+  if (start === -1) return "";
+
+  // YAML wraps long values onto indented continuation lines; the next
+  // top-level key ends the value.
+  const value = [lines[start].slice("description:".length)];
+  for (const line of lines.slice(start + 1)) {
+    if (/^\S/.test(line)) break;
+    value.push(line);
+  }
+  const description = value.join(" ").replace(/\s+/g, " ").trim();
+  return /^.*?[.!?](?=\s|$)/.exec(description)?.[0] ?? description;
+}
+
+// Where a skill came from: the upstream file for vendored skills, this
+// repository for the ones written here.
+function origin(skill: string, lock: Record<string, any>): string {
+  const entry = lock[skill];
+  if (!entry) return "this repo";
+  const [repo, ref = "HEAD"] = String(entry.source).split("#");
+  if (entry.sourceType !== "github") return `\`${entry.source}\``;
+  const url = `https://github.com/${repo}/blob/${ref}/${entry.skillPath}`;
+  return `[${repo}](${url})`;
+}
+
+// Rewrite the README catalog from the skills on disk and the vendoring
+// lockfile, so adding a skill is the only step in adding a skill.
+function catalog(): boolean {
+  const lock = readJson(join(PLUGIN, "skills-lock.json")).skills ?? {};
+  const skills = readdirSync(SKILLS, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(SKILLS, entry.name, "SKILL.md")))
+    .map((entry) => entry.name)
+    .sort();
+
+  const rows = skills.map((skill) => {
+    const path = `plugins/stepankuzmin-skills/skills/${skill}/SKILL.md`;
+    const summary = summarize(skill).replaceAll("|", "\\|");
+    return `| [\`${skill}\`](${path}) | ${summary} | ${origin(skill, lock)} |`;
+  });
+
+  const table = ["| Skill | Description | Source |", "| --- | --- | --- |", ...rows].join("\n");
+  const readme = readFileSync(README, "utf8");
+  const updated = readme.replace(
+    new RegExp(`${START}[\\s\\S]*?${END}`),
+    `${START}\n\n${table}\n\n${END}`,
+  );
+  if (updated === readme) return false;
+  writeFileSync(README, updated);
+  return true;
+}
 
 // Propagate version + description from the root package.json into every plugin
 // manifest listed in the marketplace, so a single `npm version` covers them all.
@@ -78,6 +138,8 @@ function sync(): void {
       }
     }
   }
+
+  if (catalog()) changed.push("README.md");
 
   console.log(`skills ${version} — ${description}`);
   console.log(
