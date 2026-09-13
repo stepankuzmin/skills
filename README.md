@@ -11,6 +11,8 @@ The marketplace includes:
 - `code-review` - reviews a diff for correctness bugs and unnecessary
   complexity, posting only findings backed by a failure scenario or a simpler
   alternative.
+- `manage-skills` - adds, updates, or removes skills in this plugin from any repo by
+  opening a PR against `stepankuzmin/skills`.
 
 ## Install in Codex
 
