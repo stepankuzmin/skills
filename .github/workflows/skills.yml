@@ -37,7 +37,7 @@ jobs:
           case "$OP" in
             add)    ./skills.ts add "$SOURCE" -s "$SKILL" ;;
             update) ./skills.ts update ${SKILL:+"$SKILL"} ;;
-            remove) ./skills.ts remove "$SKILL" ;;
+            remove) ./skills.ts remove "$SKILL" -y ;;
           esac
 
       - name: Open the PR
