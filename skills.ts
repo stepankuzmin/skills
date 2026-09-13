@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The CLI for this marketplace.
 //
-//   ./skills.ts add <source> [-s <skill>]...   Vendor external skills into the plugin
+//   ./skills.ts add <source> -s <skill>...     Vendor external skills into the plugin
 //   ./skills.ts update [<skill>]...            Re-fetch vendored skills (default: all)
 //   ./skills.ts remove <skill>...              Drop vendored skills
 //   ./skills.ts sync                           Propagate version and description
@@ -18,7 +18,7 @@ const PLUGIN = join(root, "plugins/stepankuzmin-skills");
 
 const USAGE = `usage: skills <command>
 
-  add <source> [-s <skill>]...   Vendor skills from a source into the plugin
+  add <source> -s <skill>...     Vendor named skills from a source into the plugin
   update [<skill>]...            Re-fetch vendored skills (default: all)
   remove <skill>...              Drop vendored skills
   sync                           Propagate version and description into the manifests
@@ -42,14 +42,26 @@ const set = (obj: Record<string, unknown>, key: string, value: unknown): boolean
 // manifest listed in the marketplace, so a single `npm version` covers them all.
 function sync(): void {
   const { version, description } = readJson(join(root, "package.json"));
-  const marketplacePath = join(root, ".claude-plugin/marketplace.json");
-  const marketplace = readJson(marketplacePath);
   const changed: string[] = [];
-  let marketplaceDirty = false;
 
-  for (const plugin of marketplace.plugins) {
-    if (set(plugin, "description", description)) marketplaceDirty = true;
+  // Each harness keeps its own marketplace descriptor, with its own copy of
+  // the description.
+  for (const file of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]) {
+    const marketplacePath = join(root, file);
+    const marketplace = readJson(marketplacePath);
+    let dirty = false;
+    for (const plugin of marketplace.plugins) {
+      if (set(plugin, "description", description)) dirty = true;
+    }
+    if (dirty) {
+      writeJson(marketplacePath, marketplace);
+      changed.push(file);
+    }
+  }
 
+  // Claude's marketplace is the one that says where each plugin lives.
+  const { plugins } = readJson(join(root, ".claude-plugin/marketplace.json"));
+  for (const plugin of plugins) {
     for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
       const manifestPath = join(root, plugin.source, manifest);
       let json;
@@ -65,11 +77,6 @@ function sync(): void {
         changed.push(`${plugin.source}/${manifest}`);
       }
     }
-  }
-
-  if (marketplaceDirty) {
-    writeJson(marketplacePath, marketplace);
-    changed.push(".claude-plugin/marketplace.json");
   }
 
   console.log(`skills ${version} — ${description}`);
@@ -107,13 +114,17 @@ const [command, ...args] = process.argv.slice(2);
 switch (command) {
   case "add": {
     const [source, ...rest] = args;
-    if (!source) {
+    // -y suppresses the scope prompt, whose Global option would install
+    // outside the plugin. It also means "every skill in the source" unless
+    // the skills are named, so name them.
+    const named = rest.includes("-s") || rest.includes("--skill");
+    if (!source || source.startsWith("-") || !named) {
       console.error(USAGE);
       process.exit(1);
     }
     // npx skills runs in PLUGIN, where a relative local source would resolve.
     const from = existsSync(source) ? resolve(source) : source;
-    vendor("add", from, ...rest, "-a", "openclaw", "--copy");
+    vendor("add", from, ...rest, "-a", "openclaw", "--copy", "-y");
     break;
   }
   case "update":
