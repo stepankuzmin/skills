@@ -33,14 +33,14 @@ root. If the skill or source is unclear, ask with `AskUserQuestion`.
 ## 2. Clone
 
 ```bash
-dir=$(mktemp -d)
-gh repo clone stepankuzmin/skills "$dir/skills"
-cd "$dir/skills"
+dir=$(mktemp -d) &&
+gh repo clone stepankuzmin/skills "$dir/skills" &&
+cd "$dir/skills" &&
 git switch -c <branch>
 ```
 
-Without push access to `stepankuzmin/skills`, use `gh repo fork
-stepankuzmin/skills --clone "$dir/skills"` instead; `gh` then targets the fork.
+Without push access to `stepankuzmin/skills`, clone a fork instead:
+`cd "$dir" && gh repo fork stepankuzmin/skills --clone && cd skills`.
 Node must satisfy `engines` in `package.json`; `.nvmrc` names the tested
 version.
 
@@ -68,7 +68,8 @@ table must show the skill added or removed.
 Confirm with `AskUserQuestion` before each of these:
 
 1. Commit: `Add <skill> from <source>`, `Update <skill>`, or `Remove <skill>`.
-2. Push the branch, then `gh pr create --web --fill`. Never `--draft`.
+2. Push the branch, then `gh pr create --repo stepankuzmin/skills --web --fill`.
+   Never `--draft`.
 
 `--web` opens the PR form in the browser; the user submits it. Report the
 branch name and that the form is open. Merging is the user's step.
