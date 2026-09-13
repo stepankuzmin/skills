@@ -90,9 +90,10 @@ function catalog(): boolean {
 
   const table = ["| Skill | Description |", "| --- | --- |", ...rows].join("\n");
   const readme = readFileSync(README, "utf8");
+  // A replacer callback, so a $ in a description stays literal.
   const updated = readme.replace(
     new RegExp(`${START}[\\s\\S]*?${END}`),
-    `${START}\n\n${table}\n\n${END}`,
+    () => `${START}\n\n${table}\n\n${END}`,
   );
   if (updated === readme) return false;
   writeFileSync(README, updated);
