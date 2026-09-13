@@ -10,8 +10,8 @@
 // plugin, so its own skills-lock.json records what came from where. Every
 // command that touches the plugin ends with a manifest sync.
 import { spawnSync } from "node:child_process";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 const root = import.meta.dirname;
 const PLUGIN = join(root, "plugins/stepankuzmin-skills");
@@ -88,21 +88,30 @@ function vendor(...args: string[]): void {
     cwd: PLUGIN,
     stdio: "inherit",
   });
-  if (run.status !== 0) process.exit(run.status ?? 1);
 
   // skills also installs into every agent it detects; the plugin ships skills/.
   for (const dir of [".agents", ".claude"]) {
     rmSync(join(PLUGIN, dir), { recursive: true, force: true });
   }
+
+  if (run.status !== 0) process.exit(run.status ?? 1);
   sync();
 }
 
 const [command, ...args] = process.argv.slice(2);
 
 switch (command) {
-  case "add":
-    vendor("add", ...args, "-a", "openclaw", "--copy");
+  case "add": {
+    const [source, ...rest] = args;
+    if (!source) {
+      console.error(USAGE);
+      process.exit(1);
+    }
+    // npx skills runs in PLUGIN, where a relative local source would resolve.
+    const from = existsSync(source) ? resolve(source) : source;
+    vendor("add", from, ...rest, "-a", "openclaw", "--copy");
     break;
+  }
   case "update":
     vendor("update", ...args, "-p");
     break;

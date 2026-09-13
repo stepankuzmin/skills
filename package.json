@@ -6,6 +6,9 @@
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/stepankuzmin/skills",
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
     "sync": "node skills.ts sync"
   }
