@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "uncomplect": {
+      "source": "joelhooks/skills",
+      "sourceType": "github",
+      "skillPath": "skills/uncomplect/SKILL.md",
+      "computedHash": "908914cc197f4d4578756b5a08229984282a0b73a9b6dfb4f44ca93e4a35c826"
+    }
+  }
+}
