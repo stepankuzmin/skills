@@ -1,0 +1,63 @@
+name: Vendor a skill
+
+on:
+  workflow_dispatch:
+    inputs:
+      op:
+        description: What to do
+        type: choice
+        options: [add, update, remove]
+        required: true
+      skill:
+        description: Skill name (empty with update means all)
+        type: string
+      source:
+        description: Source for add (owner/repo, owner/repo#ref, git or tree URL)
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Run skills.ts
+        env:
+          OP: ${{ inputs.op }}
+          SKILL: ${{ inputs.skill }}
+          SOURCE: ${{ inputs.source }}
+        run: |
+          case "$OP" in
+            add)    ./skills.ts add "$SOURCE" -s "$SKILL" ;;
+            update) ./skills.ts update ${SKILL:+"$SKILL"} ;;
+            remove) ./skills.ts remove "$SKILL" ;;
+          esac
+
+      - name: Open the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OP: ${{ inputs.op }}
+          SKILL: ${{ inputs.skill }}
+          SOURCE: ${{ inputs.source }}
+        run: |
+          branch="$OP-${SKILL:-all}"
+          case "$OP" in
+            add)    title="Add $SKILL from $SOURCE" ;;
+            update) title="Update ${SKILL:-all vendored skills}" ;;
+            remove) title="Remove $SKILL" ;;
+          esac
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -A
+          git commit -m "$title"
+          git push -u origin "$branch"
+          gh pr create --base main --head "$branch" --title "$title" \
+            --body "Opened by the Vendor a skill workflow, run $GITHUB_RUN_ID."
