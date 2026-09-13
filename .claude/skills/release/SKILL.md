@@ -1,11 +1,11 @@
 ---
 name: release
-description: Cut a new release of this plugins marketplace. Reviews everything since the previous tag, picks a semver bump, bumps the version and syncs every manifest into one commit, then tags and pushes. Use when asked to "release", "cut a release", "ship a version", "bump the version", or "tag a release" in this repo. Always confirms the tag explicitly before creating it.
+description: Cut a new release of this plugins marketplace. Reviews everything since the previous tag, picks a semver bump, bumps the version, publishes it into every manifest, lands it in one commit, then tags and pushes. Use when asked to "release", "cut a release", "ship a version", "bump the version", or "tag a release" in this repo. Always confirms the tag explicitly before creating it.
 ---
 
 # Release
 
-Version and description live in the root `package.json`; `npm run sync`
+Version and description live in the root `package.json`; `npm run publish`
 propagates them into every plugin manifest listed in `marketplace.json`. This
 skill drives that flow end to end, landing all the bumps in a single commit.
 
@@ -54,15 +54,16 @@ Do not create the tag without an explicit yes.
 ## 5. Release
 
 On confirmation, bump with `--no-git-tag-version` so npm only edits
-`package.json` (no commit, no tag), sync the manifests, then land every bump in
+`package.json` (no commit, no tag), publish the manifests, then land every bump in
 a single commit before tagging and pushing:
 
 ```bash
 npm version <patch|minor|major> --no-git-tag-version   # bumps package.json only
-npm run sync                                            # propagate to the manifests
+npm run publish                                            # propagate to the manifests
 git commit -am "v<new>"
 git tag v<new>
 git push --follow-tags
 ```
 
-Report the new version, the tag, and that the commit and tag are pushed.
+Report the new version and the tag. The pushed tag runs the Release workflow,
+which checks the manifests against it and creates the GitHub release.

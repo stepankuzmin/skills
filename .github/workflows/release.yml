@@ -1,13 +1,8 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      bump:
-        description: Semver bump
-        type: choice
-        options: [patch, minor, major]
-        required: true
+  push:
+    tags: ["v*"]
 
 permissions:
   contents: write
@@ -17,15 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          npm version "${{ inputs.bump }}" --no-git-tag-version
-          npm run sync
-          version=$(node -p "require('./package.json').version")
-          git commit -am "v$version"
-          git tag "v$version"
-          git push --follow-tags
+      - name: Check the tag matches the manifests
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          for f in package.json plugins/*/.claude-plugin/plugin.json; do
+            v=$(node -p "require('./$f').version")
+            [ "$v" = "$tag" ] || { echo "$f is $v, tag is $tag"; exit 1; }
+          done
+      - run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

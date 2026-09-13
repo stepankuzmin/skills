@@ -4,11 +4,11 @@
 //   ./skills.ts add <source> -s <skill>...     Vendor external skills into the plugin
 //   ./skills.ts update [<skill>]...            Re-fetch vendored skills (default: all)
 //   ./skills.ts remove <skill>...              Drop vendored skills
-//   ./skills.ts sync                           Propagate version, description, catalog
+//   ./skills.ts publish                        Propagate version, description, catalog
 //
 // Vendoring is npx skills (https://npmjs.com/package/skills) run inside the
 // plugin, so its own skills-lock.json records what came from where. Every
-// command that touches the plugin ends with a manifest sync.
+// command that touches the plugin ends with a publish.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -25,7 +25,7 @@ const USAGE = `usage: skills <command>
   add <source> -s <skill>...     Vendor named skills from a source into the plugin
   update [<skill>]...            Re-fetch vendored skills (default: all)
   remove <skill>...              Drop vendored skills
-  sync                           Propagate version, description, and the README catalog
+  publish                        Propagate version, description, and the README catalog
 
 Sources take any form npx skills accepts: owner/repo, owner/repo#ref,
 a GitHub tree URL, a git URL, or a local path.`;
@@ -102,7 +102,7 @@ function catalog(): boolean {
 
 // Propagate version + description from the root package.json into every plugin
 // manifest listed in the marketplace, so a single `npm version` covers them all.
-function sync(): void {
+function publish(): void {
   const { version, description } = readJson(join(root, "package.json"));
   const changed: string[] = [];
 
@@ -146,7 +146,7 @@ function sync(): void {
   console.log(`skills ${version} — ${description}`);
   console.log(
     changed.length === 0
-      ? "Manifests already in sync."
+      ? "Manifests already published."
       : "Synced:\n" + changed.map((file) => `  ${file}`).join("\n"),
   );
 }
@@ -170,7 +170,7 @@ function vendor(...args: string[]): void {
   for (const dir of strays) rmSync(dir, { recursive: true, force: true });
 
   if (run.status !== 0) process.exit(run.status ?? 1);
-  sync();
+  publish();
 }
 
 const [command, ...args] = process.argv.slice(2);
@@ -197,8 +197,8 @@ switch (command) {
   case "remove":
     vendor("remove", ...args);
     break;
-  case "sync":
-    sync();
+  case "publish":
+    publish();
     break;
   default:
     console.error(USAGE);

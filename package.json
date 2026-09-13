@@ -10,6 +10,6 @@
     "node": ">=22.20.0"
   },
   "scripts": {
-    "sync": "node skills.ts sync"
+    "publish": "node skills.ts publish"
   }
 }
