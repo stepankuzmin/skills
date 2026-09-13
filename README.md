@@ -19,34 +19,18 @@ The marketplace includes:
 Run `npm run publish` after adding, updating, or removing a skill; it regenerates
 the table above from the skills on disk.
 
-## Install in Codex
+## Install
 
-Add this repository as a marketplace, then install the plugin:
+Point your agent at this repo and ask it to install the skills:
+
+```text
+Install the skills from https://github.com/stepankuzmin/skills
+```
+
+Or install them with the [skills](https://npmjs.com/package/skills) CLI:
 
 ```bash
-codex plugin marketplace add stepankuzmin/skills
-codex plugin add stepankuzmin-skills@stepankuzmin
+npx skills add stepankuzmin/skills
 ```
 
-Restart the ChatGPT desktop app and start a new Codex thread so the installed
-skills are discovered. The marketplace appears as **Stepan Kuzmin** in the
-Plugins Directory.
-
-Example prompts:
-
-```text
-Ask grug to simplify this plan.
-Give me a grug second opinion on this design.
-Run a grug review on the current branch.
-```
-
-The plugin always provides the Grug skills. If `grug` does not show up as an
-agent in your harness, invoke the same behavior by prompting the `grug` skill
-directly, e.g. "Ask grug to review X".
-
-## Install in Claude Code
-
-```text
-/plugin marketplace add stepankuzmin/skills
-/plugin install stepankuzmin-skills@stepankuzmin
-```
+Add `-s <skill>` to pick specific skills, or `-g` to install for every project.
