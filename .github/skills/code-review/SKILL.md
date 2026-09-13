@@ -1,3 +1,7 @@
+---
+name: code-review
+description: Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. Use when reviewing a diff, a pull request, or changed files, and when the user says "review this", "code review", "check this", or "look for bugs". Security issues (injection, auth bypass, data exposure) count as correctness findings. An empty review is the correct review when nothing is wrong.
+---
 Do not manufacture feedback. Post findings only when you can prove them.
 An empty review is the correct review when nothing is wrong.
 Be helpful, not pushy.
