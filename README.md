@@ -8,6 +8,9 @@ The marketplace includes:
   documents, and code.
 - `grug-review` - reviews code for unnecessary complexity and proposes concrete
   simplifications.
+- `code-review` - reviews a diff for correctness bugs and unnecessary
+  complexity, posting only findings backed by a failure scenario or a simpler
+  alternative.
 
 ## Install in Codex
 
