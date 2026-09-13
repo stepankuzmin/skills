@@ -35,14 +35,14 @@ gh workflow run ...
 gh run list -R stepankuzmin/skills -w skills.yml -u "$(gh api user -q .login)" -L 1 \
   --json databaseId,createdAt -q ".[] | select(.createdAt >= \"$since\") | .databaseId"
 gh run watch <id> -R stepankuzmin/skills --exit-status
-gh pr list -R stepankuzmin/skills --head <op>-<skill or all>-<id> --json url -q '.[0].url'
+gh run view <id> -R stepankuzmin/skills --log | grep -oE 'Nothing changed|https://github.com/[^ ]*/pull/[0-9]+'
 ```
 
 The run appears a few seconds after dispatch; when the list is empty, wait
-five seconds and list again. The branch name ends in the run id. On failure,
-show the log (`gh run view <id> -R stepankuzmin/skills --log-failed`) and stop.
-When the run logs "Nothing changed", report that and stop. On success, report
-the PR URL. Reviewing and merging is the user's step.
+five seconds and list again. On failure, show
+`gh run view <id> -R stepankuzmin/skills --log-failed` and stop. The last
+command yields either "Nothing changed" or the PR URL; report it. Reviewing
+and merging is the user's step.
 
 ## 3. Install
 

@@ -62,7 +62,7 @@ npm version <patch|minor|major> --no-git-tag-version   # bumps package.json only
 npm run publish                                            # propagate to the manifests
 git commit -am "v<new>"
 git tag v<new>
-git push --follow-tags
+git push origin HEAD v<new>
 ```
 
 Report the new version and the tag. The pushed tag runs the Release workflow,

@@ -47,7 +47,7 @@ jobs:
           SKILL: ${{ inputs.skill }}
           SOURCE: ${{ inputs.source }}
         run: |
-          branch="$OP-${SKILL:-all}-$GITHUB_RUN_ID"
+          branch="$OP-${SKILL:-all}-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           case "$OP" in
             add)    title="Add $SKILL from $SOURCE" ;;
             update) title="Update ${SKILL:-all vendored skills}" ;;
