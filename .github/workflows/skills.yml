@@ -47,7 +47,7 @@ jobs:
           SKILL: ${{ inputs.skill }}
           SOURCE: ${{ inputs.source }}
         run: |
-          branch="$OP-${SKILL:-all}"
+          branch="$OP-${SKILL:-all}-$GITHUB_RUN_ID"
           case "$OP" in
             add)    title="Add $SKILL from $SOURCE" ;;
             update) title="Update ${SKILL:-all vendored skills}" ;;
@@ -55,8 +55,12 @@ jobs:
           esac
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$branch"
           git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed; no PR to open."
+            exit 0
+          fi
+          git switch -c "$branch"
           git commit -m "$title"
           git push -u origin "$branch"
           gh pr create --base main --head "$branch" --title "$title" \

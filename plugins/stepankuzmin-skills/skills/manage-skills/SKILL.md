@@ -28,18 +28,32 @@ The runner cannot read local disk, so a skill in the current repo must be
 pushed first; then pass the repo as `owner/repo#branch`. If the skill, source,
 or bump is unclear, ask with `AskUserQuestion`.
 
+Release publishes a tag, so before dispatching it review what changed and
+confirm with `AskUserQuestion`, stating the bump and the changes:
+
+```bash
+tag=$(git ls-remote --tags --sort=-v:refname https://github.com/stepankuzmin/skills 'v*' | head -1 | sed 's#.*/##')
+gh api "repos/stepankuzmin/skills/compare/$tag...main" -q '.commits[].commit.message'
+```
+
+No tag yet means a first release: review `gh api repos/stepankuzmin/skills/commits`.
+
 ## 2. Run and watch
 
 ```bash
+since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 gh workflow run ...
-gh run list -R stepankuzmin/skills -w skills.yml -L 1 --json databaseId -q '.[0].databaseId'
+gh run list -R stepankuzmin/skills -w skills.yml -u "$(gh api user -q .login)" -L 1 \
+  --json databaseId,createdAt -q ".[] | select(.createdAt >= \"$since\") | .databaseId"
 gh run watch <id> -R stepankuzmin/skills --exit-status
-gh pr list -R stepankuzmin/skills --head <op>-<skill or all> --json url -q '.[0].url'
+gh pr list -R stepankuzmin/skills --head <op>-<skill or all>-<id> --json url -q '.[0].url'
 ```
 
-The run appears a few seconds after dispatch. On failure, show the log
-(`gh run view <id> -R stepankuzmin/skills --log-failed`) and stop. On success,
-report the PR URL. Reviewing and merging is the user's step.
+The run appears a few seconds after dispatch; when the list is empty, wait
+five seconds and list again. The branch name ends in the run id. On failure,
+show the log (`gh run view <id> -R stepankuzmin/skills --log-failed`) and stop.
+When the run logs "Nothing changed", report that and stop. On success, report
+the PR URL. Reviewing and merging is the user's step.
 
 For release, watch `release.yml` the same way and report the new tag.
 
