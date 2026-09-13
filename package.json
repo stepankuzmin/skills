@@ -1,6 +1,6 @@
 {
   "name": "skills",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Clarity-first skills for simplifying code, plans, and technical decisions.",
   "type": "module",
   "private": true,
