@@ -61,15 +61,14 @@ function summarize(skill: string): string {
   return /^.*?[.!?](?=\s|$)/.exec(description)?.[0] ?? description;
 }
 
-// Where a skill came from: the upstream file for vendored skills, this
-// repository for the ones written here.
+// Vendored skills carry a link to the upstream file they were copied from.
 function origin(skill: string, lock: Record<string, any>): string {
   const entry = lock[skill];
-  if (!entry) return "this repo";
+  if (!entry) return "";
   const [repo, ref = "HEAD"] = String(entry.source).split("#");
-  if (entry.sourceType !== "github") return `\`${entry.source}\``;
+  if (entry.sourceType !== "github") return ` (\`${entry.source}\`)`;
   const url = `https://github.com/${repo}/blob/${ref}/${entry.skillPath}`;
-  return `[${repo}](${url})`;
+  return ` ([${repo}](${url}))`;
 }
 
 // Rewrite the README catalog from the skills on disk and the vendoring
@@ -84,10 +83,10 @@ function catalog(): boolean {
   const rows = skills.map((skill) => {
     const path = `plugins/stepankuzmin-skills/skills/${skill}/SKILL.md`;
     const summary = summarize(skill).replaceAll("|", "\\|");
-    return `| [\`${skill}\`](${path}) | ${summary} | ${origin(skill, lock)} |`;
+    return `| [\`${skill}\`](${path})${origin(skill, lock)} | ${summary} |`;
   });
 
-  const table = ["| Skill | Description | Source |", "| --- | --- | --- |", ...rows].join("\n");
+  const table = ["| Skill | Description |", "| --- | --- |", ...rows].join("\n");
   const readme = readFileSync(README, "utf8");
   const updated = readme.replace(
     new RegExp(`${START}[\\s\\S]*?${END}`),
