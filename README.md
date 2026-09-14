@@ -9,6 +9,7 @@
 | Skill | Description |
 | --- | --- |
 | [`grug-review`](plugins/stepankuzmin-skills/skills/grug-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. |
+| [`marie-kondo`](plugins/stepankuzmin-skills/skills/marie-kondo/SKILL.md) | Aggressive refactor pass that cuts code that doesn't earn its keep. |
 
 ## Install
 
