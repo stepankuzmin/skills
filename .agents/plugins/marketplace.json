@@ -16,21 +16,6 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
-    },
-    {
-      "name": "joelhooks-skills",
-      "description": "Joel Hooks' skills, including uncomplect.",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/joelhooks/skills.git",
-        "path": "./",
-        "sha": "7c0a930d761bc05f50c3d31cf55ba7f289b45861"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
     }
   ]
 }
