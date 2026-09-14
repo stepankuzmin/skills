@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: npm install -g @anthropic-ai/claude-code@latest @openai/codex@latest
+      - run: claude plugin validate .
+      - run: claude plugin validate plugins/stepankuzmin-skills
+      - run: codex plugin marketplace add .
+      - run: codex plugin add complexity@stepankuzmin
