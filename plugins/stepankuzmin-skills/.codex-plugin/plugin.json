@@ -1,5 +1,5 @@
 {
-  "name": "stepankuzmin-skills",
+  "name": "complexity",
   "version": "0.2.0",
   "description": "Grug agent and grug-review skill: clarity-first code review.",
   "author": {
@@ -17,7 +17,7 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Stepan Kuzmin Skills",
+    "displayName": "Complexity",
     "shortDescription": "Grug agent and grug-review skill",
     "longDescription": "Grug reviews diffs and pull requests for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version.",
     "developerName": "Stepan Kuzmin",
