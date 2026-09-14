@@ -45,57 +45,69 @@ function summarize(text: string): string {
 
 type Row = { name: string; url: string; text: string };
 
-const row = ({ name, url, text }: Row) =>
-  `| [\`${name}\`](${url}) | ${summarize(text).replaceAll("|", "\\|")} |`;
+const table = (kind: string, rows: Row[]) =>
+  [`| ${kind} | Description |`, "| --- | --- |", ...rows.map(
+    ({ name, url, text }) => `| [\`${name}\`](${url}) | ${summarize(text).replaceAll("|", "\\|")} |`,
+  )].join("\n");
 
-function localRows(): Row[] {
-  return readdirSync(SKILLS, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && existsSync(join(SKILLS, entry.name, "SKILL.md")))
-    .map((entry) => entry.name)
+// Every SKILL.md (or agent .md) under a local plugin's `skills/` or `agents/` dir.
+function localRows(source: string, kind: "skills" | "agents"): Row[] {
+  const dir = join(root, source, kind);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .map((entry) => {
+      if (kind === "agents") return entry.isFile() && entry.name.endsWith(".md") ? entry.name.slice(0, -3) : "";
+      return entry.isDirectory() && existsSync(join(dir, entry.name, "SKILL.md")) ? entry.name : "";
+    })
+    .filter(Boolean)
     .sort()
     .map((name) => {
-      const path = `plugins/stepankuzmin-skills/skills/${name}/SKILL.md`;
+      const path = `${source.replace(/^\.\//, "")}/${kind}/${kind === "agents" ? `${name}.md` : `${name}/SKILL.md`}`;
       return { name, url: path, text: readFileSync(join(root, path), "utf8") };
     });
 }
 
 // External skills are github marketplace entries; their SKILL.md is fetched
 // at the pinned commit.
-async function externalRows(): Promise<Row[]> {
+async function externalRows(plugin: any): Promise<Row[]> {
+  const { source } = plugin;
+  const ref = source.sha ?? source.ref ?? "HEAD";
   const rows: Row[] = [];
-  for (const plugin of readJson(MARKETPLACE).plugins) {
-    const { source } = plugin;
-    if (source?.source !== "github") continue;
-    const ref = source.sha ?? source.ref ?? "HEAD";
-    for (const skillPath of plugin.skills ?? []) {
-      const file = `${skillPath.replace(/^\.\//, "")}/SKILL.md`;
-      const raw = `https://raw.githubusercontent.com/${source.repo}/${ref}/${file}`;
-      const response = await fetch(raw);
-      if (!response.ok) throw new Error(`${raw}: ${response.status}`);
-      rows.push({
-        name: skillPath.split("/").at(-1)!,
-        url: `https://github.com/${source.repo}/blob/${ref}/${file}`,
-        text: await response.text(),
-      });
-    }
+  for (const skillPath of plugin.skills ?? []) {
+    const file = `${skillPath.replace(/^\.\//, "")}/SKILL.md`;
+    const raw = `https://raw.githubusercontent.com/${source.repo}/${ref}/${file}`;
+    const response = await fetch(raw);
+    if (!response.ok) throw new Error(`${raw}: ${response.status}`);
+    rows.push({
+      name: skillPath.split("/").at(-1)!,
+      url: `https://github.com/${source.repo}/blob/${ref}/${file}`,
+      text: await response.text(),
+    });
   }
   return rows;
 }
 
-// Rewrite one README table between its markers.
-function replaceTable(readme: string, marker: string, rows: Row[]): string {
-  const start = `<!-- ${marker}:start -->`;
-  const end = `<!-- ${marker}:end -->`;
-  const table = ["| Skill | Description |", "| --- | --- |", ...rows.map(row)].join("\n");
-  // A replacer callback, so a $ in a description stays literal.
-  return readme.replace(new RegExp(`${start}[\\s\\S]*?${end}`), () => `${start}\n\n${table}\n\n${end}`);
-}
-
-// Rewrite the README catalogs, so adding a skill is the only step in adding a skill.
+// One README section per marketplace plugin, so editing the marketplace is
+// the only step in editing the README.
 async function catalog(): Promise<boolean> {
+  const sections: string[] = [];
+  for (const plugin of readJson(MARKETPLACE).plugins) {
+    const heading = plugin.name[0].toUpperCase() + plugin.name.slice(1);
+    const tables: [string, Row[]][] =
+      typeof plugin.source === "string"
+        ? [["Agent", localRows(plugin.source, "agents")], ["Skill", localRows(plugin.source, "skills")]]
+        : [["Skill", await externalRows(plugin)]];
+    const body = tables.filter(([, rows]) => rows.length > 0).map(([kind, rows]) => table(kind, rows));
+    sections.push([`## ${heading}`, plugin.description, ...body].join("\n\n"));
+  }
+  const start = "<!-- catalog:start -->";
+  const end = "<!-- catalog:end -->";
   const readme = readFileSync(README, "utf8");
-  let updated = replaceTable(readme, "skills", localRows());
-  updated = replaceTable(updated, "external", await externalRows());
+  // A replacer callback, so a $ in a description stays literal.
+  const updated = readme.replace(
+    new RegExp(`${start}[\\s\\S]*?${end}`),
+    () => `${start}\n\n${sections.join("\n\n")}\n\n${end}`,
+  );
   if (updated === readme) return false;
   writeFileSync(README, updated);
   return true;

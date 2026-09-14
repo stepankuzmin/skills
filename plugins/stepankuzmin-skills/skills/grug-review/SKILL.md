@@ -25,7 +25,7 @@ issues where you cannot trace the actual failure path.
 Security bugs (injection, auth bypass, data exposure) are correctness findings.
 The failure scenario is the unauthorized access or exposure itself.
 
-## Simplicity
+## Complexity
 
 The yardstick is the 3 AM test: can a tired developer understand and change
 this code without context?
@@ -60,7 +60,7 @@ Cap the review at five findings, most severe first.
 Correctness finding: file and line, what is wrong, the failure scenario
 (inputs, code path, observable behavior), the fix.
 
-Simplicity finding: file and line, the simpler version, and what it gives up.
+Complexity finding: file and line, the simpler version, and what it gives up.
 
 Nothing else. No summary, no praise, no severity labels.
 

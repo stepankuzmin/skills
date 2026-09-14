@@ -6,7 +6,7 @@
   },
   "plugins": [
     {
-      "name": "grug",
+      "name": "complexity",
       "source": "./plugins/stepankuzmin-skills",
       "description": "Grug agent and grug-review skill: clarity-first code review."
     },
