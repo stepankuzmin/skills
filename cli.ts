@@ -27,7 +27,7 @@ type PluginSource =
   | { kind: "local"; path: string }
   | { kind: "github"; repo: string; ref: string; skills: string[] };
 
-type Plugin = { name: string; description: string; source: PluginSource };
+type Plugin = { name: string; description: string; category: string; source: PluginSource };
 
 // Claude's marketplace is the one that says where each plugin lives.
 // A string source is a local path; an object source is someone else's repo.
@@ -40,8 +40,9 @@ function parseMarketplace(input: unknown): Plugin[] {
     if (!isRecord(entry)) throw new Error(`${where}: must be an object`);
     const name = field(entry, "name", where);
     const description = field(entry, "description", where);
+    const category = field(entry, "category", where);
     if (typeof entry.source === "string") {
-      return { name, description, source: { kind: "local", path: entry.source } };
+      return { name, description, category, source: { kind: "local", path: entry.source } };
     }
     if (!isRecord(entry.source) || entry.source.source !== "github") {
       throw new Error(`${where}: source must be a path or a github source`);
@@ -57,6 +58,7 @@ function parseMarketplace(input: unknown): Plugin[] {
     return {
       name,
       description,
+      category,
       source: { kind: "github", repo: field(entry.source, "repo", where), ref, skills },
     };
   });
@@ -138,15 +140,24 @@ async function tables(source: PluginSource): Promise<{ kind: string; rows: Row[]
   }
 }
 
-// One README section per marketplace plugin, so editing the marketplace is
+// One README section per marketplace category, so editing the marketplace is
 // the only step in editing the README.
 async function catalog(plugins: Plugin[]): Promise<boolean> {
-  const sections: string[] = [];
+  const categories = new Map<string, { kind: string; rows: Row[] }[]>();
   for (const plugin of plugins) {
-    const heading = plugin.name[0].toUpperCase() + plugin.name.slice(1);
-    const body = (await tables(plugin.source)).filter(({ rows }) => rows.length > 0).map(table);
-    sections.push([`## ${heading}`, plugin.description, ...body].join("\n\n"));
+    const merged = categories.get(plugin.category) ?? [];
+    for (const { kind, rows } of await tables(plugin.source)) {
+      const existing = merged.find((entry) => entry.kind === kind);
+      if (existing) existing.rows.push(...rows);
+      else merged.push({ kind, rows });
+    }
+    categories.set(plugin.category, merged);
   }
+  const sections = [...categories].map(([category, merged]) => {
+    const heading = category[0].toUpperCase() + category.slice(1);
+    const body = merged.filter(({ rows }) => rows.length > 0).map(table);
+    return [`## ${heading}`, ...body].join("\n\n");
+  });
   const start = "<!-- catalog:start -->";
   const end = "<!-- catalog:end -->";
   const readme = readFileSync(README, "utf8");

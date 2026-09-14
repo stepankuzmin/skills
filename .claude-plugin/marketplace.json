@@ -8,7 +8,8 @@
     {
       "name": "complexity",
       "source": "./plugins/stepankuzmin-skills",
-      "description": "Grug agent and grug-review skill: clarity-first code review."
+      "description": "Grug agent and grug-review skill: clarity-first code review.",
+      "category": "complexity"
     },
     {
       "name": "joelhooks-skills",
@@ -20,7 +21,8 @@
       "description": "uncomplect: pressure-test a stateful system or replacement design through Hickey, Young, Ousterhout, and DDD.",
       "skills": [
         "./skills/uncomplect"
-      ]
+      ],
+      "category": "complexity"
     }
   ]
 }
