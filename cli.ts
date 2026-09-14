@@ -6,22 +6,61 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = import.meta.dirname;
-const PLUGIN = join(root, "plugins/stepankuzmin-skills");
-const SKILLS = join(PLUGIN, "skills");
 const README = join(root, "README.md");
 const MARKETPLACE = join(root, ".claude-plugin/marketplace.json");
 
-const readJson = (path: string) => JSON.parse(readFileSync(path, "utf8"));
+const readJson = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 
 const writeJson = (path: string, value: unknown) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + "\n");
 
-// Set obj[key] = value, reporting whether anything actually changed.
-const set = (obj: Record<string, unknown>, key: string, value: unknown): boolean => {
-  if (obj[key] === value) return false;
-  obj[key] = value;
-  return true;
-};
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+function field(record: Record<string, unknown>, key: string, where: string): string {
+  const value = record[key];
+  if (typeof value !== "string") throw new Error(`${where}: "${key}" must be a string`);
+  return value;
+}
+
+type PluginSource =
+  | { kind: "local"; path: string }
+  | { kind: "github"; repo: string; ref: string; skills: string[] };
+
+type Plugin = { name: string; description: string; source: PluginSource };
+
+// Claude's marketplace is the one that says where each plugin lives.
+// A string source is a local path; an object source is someone else's repo.
+function parseMarketplace(input: unknown): Plugin[] {
+  if (!isRecord(input) || !Array.isArray(input.plugins)) {
+    throw new Error(`${MARKETPLACE}: "plugins" must be an array`);
+  }
+  return input.plugins.map((entry: unknown, index) => {
+    const where = `${MARKETPLACE} plugins[${index}]`;
+    if (!isRecord(entry)) throw new Error(`${where}: must be an object`);
+    const name = field(entry, "name", where);
+    const description = field(entry, "description", where);
+    if (typeof entry.source === "string") {
+      return { name, description, source: { kind: "local", path: entry.source } };
+    }
+    if (!isRecord(entry.source) || entry.source.source !== "github") {
+      throw new Error(`${where}: source must be a path or a github source`);
+    }
+    const skills = Array.isArray(entry.skills) ? entry.skills : [];
+    if (!skills.every((skill) => typeof skill === "string")) {
+      throw new Error(`${where}: "skills" must be strings`);
+    }
+    const ref =
+      typeof entry.source.sha === "string" ? entry.source.sha
+      : typeof entry.source.ref === "string" ? entry.source.ref
+      : "HEAD";
+    return {
+      name,
+      description,
+      source: { kind: "github", repo: field(entry.source, "repo", where), ref, skills },
+    };
+  });
+}
 
 // The first sentence of the skill's frontmatter description.
 function summarize(text: string): string {
@@ -45,59 +84,67 @@ function summarize(text: string): string {
 
 type Row = { name: string; url: string; text: string };
 
-const table = (kind: string, rows: Row[]) =>
+const table = ({ kind, rows }: { kind: string; rows: Row[] }) =>
   [`| ${kind} | Description |`, "| --- | --- |", ...rows.map(
     ({ name, url, text }) => `| [\`${name}\`](${url}) | ${summarize(text).replaceAll("|", "\\|")} |`,
   )].join("\n");
 
 // Every SKILL.md (or agent .md) under a local plugin's `skills/` or `agents/` dir.
-function localRows(source: string, kind: "skills" | "agents"): Row[] {
-  const dir = join(root, source, kind);
+function localRows({ path, kind }: { path: string; kind: "skills" | "agents" }): Row[] {
+  const dir = join(root, path, kind);
   if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true })
-    .map((entry) => {
-      if (kind === "agents") return entry.isFile() && entry.name.endsWith(".md") ? entry.name.slice(0, -3) : "";
-      return entry.isDirectory() && existsSync(join(dir, entry.name, "SKILL.md")) ? entry.name : "";
-    })
-    .filter(Boolean)
-    .sort()
-    .map((name) => {
-      const path = `${source.replace(/^\.\//, "")}/${kind}/${kind === "agents" ? `${name}.md` : `${name}/SKILL.md`}`;
-      return { name, url: path, text: readFileSync(join(root, path), "utf8") };
-    });
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const names =
+    kind === "agents"
+      ? entries.filter((entry) => entry.isFile() && entry.name.endsWith(".md")).map((entry) => entry.name.slice(0, -3))
+      : entries.filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, "SKILL.md"))).map((entry) => entry.name);
+  return names.sort().map((name) => {
+    const file = `${path.replace(/^\.\//, "")}/${kind}/${kind === "agents" ? `${name}.md` : `${name}/SKILL.md`}`;
+    return { name, url: file, text: readFileSync(join(root, file), "utf8") };
+  });
 }
 
-// External skills are github marketplace entries; their SKILL.md is fetched
-// at the pinned commit.
-async function externalRows(plugin: any): Promise<Row[]> {
-  const { source } = plugin;
-  const ref = source.sha ?? source.ref ?? "HEAD";
+// External skills live in someone else's repo; their SKILL.md is fetched at
+// the pinned commit.
+async function externalRows({ repo, ref, skills }: { repo: string; ref: string; skills: string[] }): Promise<Row[]> {
   const rows: Row[] = [];
-  for (const skillPath of plugin.skills ?? []) {
+  for (const skillPath of skills) {
     const file = `${skillPath.replace(/^\.\//, "")}/SKILL.md`;
-    const raw = `https://raw.githubusercontent.com/${source.repo}/${ref}/${file}`;
+    const raw = `https://raw.githubusercontent.com/${repo}/${ref}/${file}`;
     const response = await fetch(raw);
     if (!response.ok) throw new Error(`${raw}: ${response.status}`);
     rows.push({
-      name: skillPath.split("/").at(-1)!,
-      url: `https://github.com/${source.repo}/blob/${ref}/${file}`,
+      name: skillPath.replace(/^.*\//, ""),
+      url: `https://github.com/${repo}/blob/${ref}/${file}`,
       text: await response.text(),
     });
   }
   return rows;
 }
 
+async function tables(source: PluginSource): Promise<{ kind: string; rows: Row[] }[]> {
+  switch (source.kind) {
+    case "local":
+      return [
+        { kind: "Agent", rows: localRows({ path: source.path, kind: "agents" }) },
+        { kind: "Skill", rows: localRows({ path: source.path, kind: "skills" }) },
+      ];
+    case "github":
+      return [{ kind: "Skill", rows: await externalRows(source) }];
+    default: {
+      const _exhaustive: never = source;
+      return _exhaustive;
+    }
+  }
+}
+
 // One README section per marketplace plugin, so editing the marketplace is
 // the only step in editing the README.
-async function catalog(): Promise<boolean> {
+async function catalog(plugins: Plugin[]): Promise<boolean> {
   const sections: string[] = [];
-  for (const plugin of readJson(MARKETPLACE).plugins) {
+  for (const plugin of plugins) {
     const heading = plugin.name[0].toUpperCase() + plugin.name.slice(1);
-    const tables: [string, Row[]][] =
-      typeof plugin.source === "string"
-        ? [["Agent", localRows(plugin.source, "agents")], ["Skill", localRows(plugin.source, "skills")]]
-        : [["Skill", await externalRows(plugin)]];
-    const body = tables.filter(([, rows]) => rows.length > 0).map(([kind, rows]) => table(kind, rows));
+    const body = (await tables(plugin.source)).filter(({ rows }) => rows.length > 0).map(table);
     sections.push([`## ${heading}`, plugin.description, ...body].join("\n\n"));
   }
   const start = "<!-- catalog:start -->";
@@ -113,6 +160,13 @@ async function catalog(): Promise<boolean> {
   return true;
 }
 
+// Set the key, reporting whether anything actually changed.
+function set(record: Record<string, unknown>, key: string, value: string): boolean {
+  if (record[key] === value) return false;
+  record[key] = value;
+  return true;
+}
+
 const USAGE = `usage: cli version
 
   version    Propagate version and description into every plugin manifest,
@@ -123,32 +177,30 @@ if (process.argv[2] !== "version") {
   process.exit(1);
 }
 
-const { version, description } = readJson(join(root, "package.json"));
+const pkg = readJson(join(root, "package.json"));
+if (!isRecord(pkg)) throw new Error("package.json: must be an object");
+const version = field(pkg, "version", "package.json");
+const description = field(pkg, "description", "package.json");
+const plugins = parseMarketplace(readJson(MARKETPLACE));
 const changed: string[] = [];
 
-// Claude's marketplace is the one that says where each plugin lives.
-// Remote entries (object sources) are other people's plugins; leave them.
-const { plugins } = readJson(MARKETPLACE);
 for (const plugin of plugins) {
-  if (typeof plugin.source !== "string") continue;
+  if (plugin.source.kind !== "local") continue;
   for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
-    const manifestPath = join(root, plugin.source, manifest);
-    let json;
-    try {
-      json = readJson(manifestPath);
-    } catch {
-      continue; // a plugin may not ship every harness's manifest
-    }
+    const manifestPath = join(root, plugin.source.path, manifest);
+    if (!existsSync(manifestPath)) continue; // a plugin may not ship every harness's manifest
+    const json = readJson(manifestPath);
+    if (!isRecord(json)) throw new Error(`${manifestPath}: must be an object`);
     let dirty = set(json, "version", version);
     if (set(json, "description", description)) dirty = true;
     if (dirty) {
       writeJson(manifestPath, json);
-      changed.push(`${plugin.source}/${manifest}`);
+      changed.push(`${plugin.source.path}/${manifest}`);
     }
   }
 }
 
-if (await catalog()) changed.push("README.md");
+if (await catalog(plugins)) changed.push("README.md");
 
 console.log(`skills ${version} — ${description}`);
 console.log(
