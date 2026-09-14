@@ -5,21 +5,8 @@
   },
   "plugins": [
     {
-      "name": "review",
-      "description": "Code review skills: correctness bugs and complexity smells.",
-      "source": {
-        "source": "local",
-        "path": "./plugins/stepankuzmin-skills"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "simplify",
-      "description": "Clarity-first lenses for plans, designs, and stateful systems.",
+      "name": "complexity",
+      "description": "Grug agent and grug-review skill: clarity-first code review.",
       "source": {
         "source": "local",
         "path": "./plugins/stepankuzmin-skills"
