@@ -1,12 +1,14 @@
 # Stepan Kuzmin Skills
 
+| Agent | Description |
+| --- | --- |
+| [`grug`](plugins/stepankuzmin-skills/agents/grug.md) | Complexity review and simplification. Spawn for a simplicity second opinion on code, a plan, or a design. |
+
 <!-- skills:start -->
 
 | Skill | Description |
 | --- | --- |
-| [`code-review`](plugins/stepankuzmin-skills/skills/code-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. |
-| [`grug`](plugins/stepankuzmin-skills/skills/grug/SKILL.md) | Apply Grug's clarity-first simplicity lens to any technical subject, including the current conversation, a plan, document, architecture, design, or code. |
-| [`grug-review`](plugins/stepankuzmin-skills/skills/grug-review/SKILL.md) | Review code for unnecessary complexity using clarity-first simplification. |
+| [`grug-review`](plugins/stepankuzmin-skills/skills/grug-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. |
 
 <!-- skills:end -->
 

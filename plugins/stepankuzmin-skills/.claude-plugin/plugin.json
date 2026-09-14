@@ -1,7 +1,7 @@
 {
   "name": "stepankuzmin-skills",
   "version": "0.2.0",
-  "description": "Clarity-first skills for simplifying code, plans, and technical decisions.",
+  "description": "Grug agent and grug-review skill: clarity-first code review.",
   "author": {
     "name": "Stepan Kuzmin"
   },

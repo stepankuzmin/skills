@@ -6,21 +6,9 @@
   },
   "plugins": [
     {
-      "name": "review",
+      "name": "grug",
       "source": "./plugins/stepankuzmin-skills",
-      "description": "Code review skills: correctness bugs and complexity smells.",
-      "skills": [
-        "./skills/code-review",
-        "./skills/grug-review"
-      ]
-    },
-    {
-      "name": "simplify",
-      "source": "./plugins/stepankuzmin-skills",
-      "description": "Clarity-first lenses for plans, designs, and stateful systems.",
-      "skills": [
-        "./skills/grug"
-      ]
+      "description": "Grug agent and grug-review skill: clarity-first code review."
     },
     {
       "name": "joelhooks-skills",
