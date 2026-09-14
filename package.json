@@ -10,6 +10,6 @@
     "node": ">=22.20.0"
   },
   "scripts": {
-    "publish": "node skills.ts publish"
+    "version": "node cli.ts version"
   }
 }
