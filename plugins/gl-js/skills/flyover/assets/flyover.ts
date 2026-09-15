@@ -287,7 +287,7 @@ export function setCamera(map: any, pose: Pose) {
 // Measured on a 49 km flight, that left 214 tiles loading in the air. Flying
 // the path first cannot miss, because the warm-up renders the poses the
 // flight renders, and it leaves 21.
-export async function preload(map: any, flight: Flight) {
+export async function preload(map: any, flight: Flight, onProgress?: (done: number, total: number) => void) {
   setCamera(map, poseAt(flight, 0));
   await idle(map);
 
@@ -297,6 +297,7 @@ export async function preload(map: any, flight: Flight) {
   for (let i = 0; i <= steps; i++) {
     setCamera(map, poseAt(flight, (flight.plan.total * i) / steps));
     await idle(map, 4000);
+    onProgress?.(i + 1, steps + 1);
   }
 
   setCamera(map, poseAt(flight, 0));

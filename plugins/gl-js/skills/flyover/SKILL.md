@@ -15,10 +15,11 @@ user names another place:
 - `<slug>.geojson`, the flight. Format in `references/waypoints.md`.
 - `<slug>.html`, built from `assets/template.html` by `scripts/build.ts`.
 
-The page is the map, the camera path, Space to pause, and one button that
-records the flight to a video file. A title card, captions, a progress bar,
-or controls are for the user to ask for. Offer them at the end and never
-bake them in.
+The page is the map, the camera path, Space to pause, one button that records
+the flight to a video file, and a labelled bar that tracks the warm-up before
+frame one. A title card, captions, a progress bar for the flight itself, or
+controls are for the user to ask for. Offer them at the end and never bake
+them in.
 
 The page carries no token. It reads `access_token` from its URL, asks for one
 when the URL has none, and puts what it is given back in the URL. The style is
