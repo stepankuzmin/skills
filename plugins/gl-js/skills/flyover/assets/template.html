@@ -1,255 +1,69 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
+<title>{{title}}</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>__TITLE__</title>
-<script src="https://cdn.jsdelivr.net/npm/mapbox-gl@__VERSION__/dist/mapbox-gl.js"></script>
-__CSS__
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v{{version}}/mapbox-gl.css">
+<script src="https://api.mapbox.com/mapbox-gl-js/v{{version}}/mapbox-gl.js"></script>
 <style>
-  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  #map { position: absolute; inset: 0; opacity: 0; transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1); }
-  #map.ready { opacity: 1; }
+body { margin: 0; background: #000; }
+#map { position: absolute; inset: 0; opacity: 0; transition: opacity 300ms; }
+#download { position: absolute; top: 12px; right: 12px; }
 </style>
 </head>
+
 <body>
 <div id="map"></div>
-<script>
-__FLIGHT_JS__
-</script>
-<script>
-const FLIGHT = __WAYPOINTS__;
-mapboxgl.accessToken = "__TOKEN__";
+<button id="download" hidden>Download video</button>
 
-const opts = Object.assign({
-  style: "mapbox://styles/mapbox/standard",
-  lightPreset: "day",
-  duration: 45000,
-  speed: null,
-  ramp: 1500,
-  loop: false,
-  terrain: true,
-  minAltitude: 10,
-}, FLIGHT.properties || {});
+<!-- assets/flyover.ts with types stripped, so the module below can import it -->
+<script type="importmap">{ "imports": { "flyover": "data:text/javascript;base64,{{library}}" } }</script>
+<script type="module">
+import { compileFlight, groundElevation, configureBasemap, preload, play, record } from "flyover";
 
-const M = mapboxgl.MercatorCoordinate;
-const points = FLIGHT.features.filter((f) => f.geometry && f.geometry.type === "Point");
-const meanLat = points.reduce((a, f) => a + f.geometry.coordinates[1], 0) / points.length;
-const metersPerMercator = 40075016.686 * Math.cos(meanLat * Math.PI / 180);
+const waypoints = {{waypoints}};
 
-// Altitudes start as meters above ground and become absolute once the DEM
-// tiles are decoded, so the camera never depends on which terrain tiles the
-// renderer has loaded.
-const waypoints = points.map((f, i) => {
-  const [lng, lat, alt = 100] = f.geometry.coordinates;
-  const p = f.properties || {};
-  const here = M.fromLngLat([lng, lat]);
-  let look, lookLngLat;
-  if (p.lookAt) {
-    lookLngLat = p.lookAt.slice(0, 2);
-    const t = M.fromLngLat(lookLngLat);
-    look = [t.x, t.y, p.lookAt[2] || 0];
-  } else {
-    const a = M.fromLngLat(points[Math.max(i - 1, 0)].geometry.coordinates.slice(0, 2));
-    const b = M.fromLngLat(points[Math.min(i + 1, points.length - 1)].geometry.coordinates.slice(0, 2));
-    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1e-9;
-    const ahead = alt * 3 / metersPerMercator;
-    look = [here.x + (b.x - a.x) / len * ahead, here.y + (b.y - a.y) / len * ahead, 0];
-    lookLngLat = new M(look[0], look[1], 0).toLngLat().toArray();
-  }
-  return { lngLat: [lng, lat], lookLngLat, pos: [here.x, here.y, Math.max(alt, opts.minAltitude)], look, hold: p.hold || 0, speed: p.speed || null };
-});
-
-const DEM_ZOOM = 13;
-const demTiles = new Map();
-async function groundAt([lng, lat]) {
-  const n = 2 ** DEM_ZOOM;
-  const x = (lng + 180) / 360 * n;
-  const y = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n;
-  const tx = Math.floor(x), ty = Math.floor(y), key = `${tx}/${ty}`;
-  if (!demTiles.has(key)) {
-    demTiles.set(key, fetch(`https://api.mapbox.com/v4/mapbox.mapbox-terrain-dem-v1/${DEM_ZOOM}/${tx}/${ty}.pngraw?access_token=${mapboxgl.accessToken}`)
-      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(r.status))))
-      .then(createImageBitmap)
-      .then((bmp) => {
-        const canvas = document.createElement("canvas");
-        canvas.width = canvas.height = bmp.width;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(bmp, 0, 0);
-        return { ctx, size: bmp.width };
-      })
-      .catch(() => null));
-  }
-  const tile = await demTiles.get(key);
-  if (!tile) return 0;
-  const [r, g, b] = tile.ctx.getImageData(Math.floor((x - tx) * tile.size), Math.floor((y - ty) * tile.size), 1, 1).data;
-  return Math.max(0, -10000 + (r * 65536 + g * 256 + b) * 0.1);
-}
-
-function catmullRom(p0, p1, p2, p3, t) {
-  const t2 = t * t, t3 = t2 * t;
-  return p1.map((_, i) => 0.5 * (
-    2 * p1[i] +
-    (-p0[i] + p2[i]) * t +
-    (2 * p0[i] - 5 * p1[i] + 4 * p2[i] - p3[i]) * t2 +
-    (-p0[i] + 3 * p1[i] - 3 * p2[i] + p3[i]) * t3));
-}
-
-const SAMPLES = 64;
-let samples, plan;
-function buildPath() {
-  samples = [];
-  let dist = 0;
-  const w = (i) => waypoints[Math.max(0, Math.min(waypoints.length - 1, i))];
-  for (let s = 0; s < waypoints.length - 1; s++) {
-    for (let k = 0; k < SAMPLES; k++) {
-      const t = k / SAMPLES;
-      const pos = catmullRom(w(s - 1).pos, w(s).pos, w(s + 1).pos, w(s + 2).pos, t);
-      const look = catmullRom(w(s - 1).look, w(s).look, w(s + 1).look, w(s + 2).look, t);
-      if (samples.length) {
-        const prev = samples[samples.length - 1].pos;
-        dist += Math.hypot(pos[0] - prev[0], pos[1] - prev[1]) * metersPerMercator;
-      }
-      samples.push({ pos, look, d: dist, seg: s });
-    }
-  }
-  const last = waypoints[waypoints.length - 1];
-  samples.push({ pos: last.pos, look: last.look, d: dist, seg: waypoints.length - 1 });
-  plan = planFlight(
-    waypoints.map((wp, i) => ({ d: samples.find((s) => s.seg === i).d, hold: wp.hold, speed: wp.speed })),
-    opts,
-  );
-}
-
-function sampleAt(d) {
-  let lo = 0, hi = samples.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (samples[mid].d < d) lo = mid + 1; else hi = mid;
-  }
-  const b = samples[Math.max(lo, 1)], a = samples[Math.max(lo - 1, 0)];
-  const t = Math.max(0, Math.min(1, (d - a.d) / (b.d - a.d || 1)));
-  return {
-    pos: a.pos.map((v, i) => v + (b.pos[i] - v) * t),
-    look: a.look.map((v, i) => v + (b.look[i] - v) * t),
-  };
-}
+const params = new URLSearchParams(location.search);
+mapboxgl.accessToken = params.get("access_token") ?? prompt("Mapbox access token");
 
 const map = new mapboxgl.Map({
-  container: "map",
-  style: opts.style,
-  interactive: false,
-  maxPitch: 85,
-  attributionControl: { compact: true },
-});
-
-function freeCameraFor({ pos, look }) {
-  const cam = M.fromLngLat(new M(pos[0], pos[1], 0).toLngLat(), pos[2]);
-  const target = M.fromLngLat(new M(look[0], look[1], 0).toLngLat(), look[2]);
-  const fx = target.x - cam.x, fy = target.y - cam.y, fz = target.z - cam.z;
-  const free = new mapboxgl.FreeCameraOptions(cam);
-  free.setPitchBearing(
-    Math.min(Math.atan2(Math.hypot(fx, fy), -fz) * 180 / Math.PI, 85),
-    Math.atan2(fx, -fy) * 180 / Math.PI,
-  );
-  return free;
-}
-
-const applyCamera = (state) => map.setFreeCameraOptions(freeCameraFor(state));
-
-function cameraAt(time) {
-  return sampleAt(distanceAt(plan, time).d);
-}
-
-// Ask the renderer for every tile the flight will need, so nothing pops in
-// mid-flight. One _preloadTiles call dedupes tiles across all sampled
-// camera states; jumpTo({ preloadOnly }) per state would reload each tile
-// once per call.
-function preloadPath() {
-  if (typeof map._preloadTiles !== "function" || !map.transform) return;
-  const step = Math.max(1000, plan.total / 120);
-  const transforms = [];
-  for (let t = 0; t <= plan.total; t += step) {
-    const tr = map.transform.clone();
-    tr.setFreeCameraOptions(freeCameraFor(cameraAt(t)));
-    transforms.push(tr);
-  }
-  map._preloadTiles(transforms);
-}
-
-const idle = () => Promise.race([
-  new Promise((resolve) => { map.once("idle", resolve); map.triggerRepaint(); }),
-  new Promise((resolve) => setTimeout(resolve, 10000)),
-]);
-
-function networkQuiet(quietMs, maxMs) {
-  return new Promise((resolve) => {
-    const t0 = performance.now();
-    let last = t0;
-    const observer = new PerformanceObserver(() => { last = performance.now(); });
-    observer.observe({ type: "resource" });
-    (function check() {
-      const now = performance.now();
-      if (now - last > quietMs || now - t0 > maxMs) { observer.disconnect(); resolve(); }
-      else setTimeout(check, 200);
-    })();
-  });
-}
-
-let startedAt = null, pausedAt = null;
-
-function frame(now) {
-  if (pausedAt !== null) return;
-  if (startedAt === null) startedAt = now;
-  let t = now - startedAt;
-  if (t >= plan.total) {
-    if (opts.loop) { startedAt = now; t = 0; } else t = plan.total;
-  }
-  applyCamera(cameraAt(t));
-  if (t < plan.total || opts.loop) requestAnimationFrame(frame);
-}
-
-window.addEventListener("keydown", (e) => {
-  if (e.code !== "Space") return;
-  e.preventDefault();
-  if (pausedAt === null) {
-    pausedAt = performance.now();
-  } else {
-    if (startedAt !== null) startedAt += performance.now() - pausedAt;
-    pausedAt = null;
-    requestAnimationFrame(frame);
-  }
+    container: "map",
+    style: params.get("style") ?? "mapbox://styles/mapbox/standard",
+    center: waypoints.features[0].geometry.coordinates,
+    zoom: 14,
+    interactive: false,
+    maxPitch: 85,
+    preserveDrawingBuffer: true
 });
 
 map.on("style.load", () => {
-  try {
-    map.setConfigProperty("basemap", "lightPreset", opts.lightPreset);
-    map.setConfigProperty("basemap", "showPointOfInterestLabels", false);
-    map.setConfigProperty("basemap", "showTransitLabels", false);
-  } catch (_) {}
-  if (opts.terrain) {
-    map.addSource("flyover-dem", { type: "raster-dem", url: "mapbox://mapbox.mapbox-terrain-dem-v1", tileSize: 512, maxzoom: 14 });
-    map.setTerrain({ source: "flyover-dem", exaggeration: 1 });
-  }
+    configureBasemap(map, params);
+    map.addSource("dem", { type: "raster-dem", url: "mapbox://mapbox.mapbox-terrain-dem-v1" });
+    map.setTerrain({ source: "dem" });
 });
 
-(async function main() {
-  await Promise.all(waypoints.map(async (wp) => {
-    const [ground, lookGround] = await Promise.all([groundAt(wp.lngLat), groundAt(wp.lookLngLat)]);
-    wp.pos[2] += ground;
-    wp.look[2] += lookGround;
-  }));
-  buildPath();
-  applyCamera(cameraAt(0));
-  await idle();
-  preloadPath();
-  await networkQuiet(1500, 15000);
-  await idle();
-  applyCamera(cameraAt(0));
-  document.getElementById("map").classList.add("ready");
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) pausedAt = performance.now();
-  else requestAnimationFrame(frame);
-})();
+map.on("load", async () => {
+    const flight = await compileFlight(waypoints, groundElevation(mapboxgl.accessToken));
+    await preload(map, flight);
+
+    const player = play(map, flight);
+    map.getContainer().style.opacity = 1;
+
+    window.addEventListener("keydown", (e) => {
+        if (e.code !== "Space") return;
+        e.preventDefault();
+        player.toggle();
+    });
+
+    const button = document.getElementById("download");
+    button.hidden = false;
+    button.onclick = async () => {
+        button.disabled = true;
+        await record(map, player);
+        button.disabled = false;
+    };
+});
 </script>
 </body>
 </html>
