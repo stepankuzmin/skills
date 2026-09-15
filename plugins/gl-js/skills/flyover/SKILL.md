@@ -20,9 +20,8 @@ progress bar, or controls are the user's call: offer them at the end, never
 bake them in.
 
 The page carries no token. It reads `access_token` from its URL and asks for
-one when the URL has none. Style is Mapbox Standard with default options;
-`style=` and any Standard config property such as `lightPreset=dusk` override
-it from the URL. The build prints the link with everything in place.
+one when the URL has none. The style is Mapbox Standard with default options,
+and terrain is whatever the style renders. The build prints the link.
 
 ## Workflow
 
@@ -44,12 +43,10 @@ it from the URL. The build prints the link with everything in place.
 4. Build and read the report:
 
    ```bash
-   node <skill-dir>/scripts/build.ts <slug>.geojson lightPreset=dusk
+   node <skill-dir>/scripts/build.ts <slug>.geojson
    ```
 
-   Any `key=value` argument goes into the link's query string; that is where
-   mood lives (`lightPreset`, `theme`, or `style=` for another style). The
-   script validates the flight, pins the latest stable Mapbox GL JS from
+   The script validates the flight, pins the latest stable Mapbox GL JS from
    `versions.json`, and prints one line per leg with speed, time, altitude,
    and turn angle, then warnings for hairpins, speed out of proportion to
    altitude, and buildings taller than the camera within 150 m of the path.
@@ -170,5 +167,5 @@ tilts it down. A target with altitude, such as a tower top at
 - Editing `template.html` for one flight. Change the GeoJSON. Change the
   template only when every future flyover needs the change.
 - Adding UI. The page has one button by design. Offer more, do not ship it.
-- Putting `lightPreset` or `style` into the GeoJSON. The build drops them
-  and tells you the `key=value` argument to pass instead.
+- Changing the style or the light preset. The page renders Standard as it
+  ships until the flight format grows a place for mood.

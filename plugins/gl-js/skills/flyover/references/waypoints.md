@@ -38,7 +38,9 @@ times are the ones the page flies.
 ## Feature geometry
 
 `coordinates` is `[lng, lat, altitude]`. Altitude is meters above the ground
-at that point, so the same number works over Manhattan and over the Alps.
+the style renders at that point, so the same number works over Manhattan and
+over the Alps. Standard draws terrain flat above zoom 13.7, so a low city
+flight measures from sea level, exactly where the buildings stand.
 
 ## Feature properties
 
@@ -54,22 +56,19 @@ altitudes ahead, which reads as a forward-facing drone.
 
 ## Page URL
 
-Style and token are not part of the flight. They come from the page URL,
-which the build prints with the token from `MAPBOX_ACCESS_TOKEN` and any
-`key=value` build arguments.
-
-| Parameter | Default | Meaning |
-| --- | --- | --- |
-| `access_token` | asked for in a prompt | Mapbox access token. |
-| `style` | `mapbox://styles/mapbox/standard` | Any Mapbox style URL. |
-| anything else | Standard defaults | Set as a Standard config property: `lightPreset=dusk`, `theme=monochrome`, `showPointOfInterestLabels=false`. |
+The token is not part of the flight. The page reads `access_token` from its
+URL, which the build prints with the value of `MAPBOX_ACCESS_TOKEN`, and
+asks for one when the URL has none.
 
 ## Page behavior
 
-Before frame one the page decodes Mapbox DEM tiles for every waypoint and
-target, so altitudes above ground become absolute and never depend on which
-terrain tiles the renderer has loaded. It then preloads every tile along the
-path, waits for the map to go idle and the network to go quiet, and fades in
+The page renders Mapbox Standard as it ships and never adds terrain. When
+the style has terrain, the page fits every waypoint into one view before
+frame one, reads the ground there through `queryTerrainElevation`, and
+applies the style's exaggeration at each waypoint's zoom, so altitudes above
+ground become absolute and never depend on which terrain tiles the renderer
+has loaded mid-flight. It then preloads every tile along the path, waits for
+the map to go idle and the network to go quiet, and fades in
 over 300 ms with the camera already moving. Space pauses and resumes from
 the same spot. With `prefers-reduced-motion` the page shows the first frame
 and waits for Space. The one button restarts the flight, records the canvas
