@@ -8,6 +8,7 @@
 
 | Skill | Description |
 | --- | --- |
+| [`grug-design`](plugins/complexity/skills/grug-design/SKILL.md) | Design the smallest clear change by inspecting existing code or interviewing the user when no implementation exists. |
 | [`grug-review`](plugins/complexity/skills/grug-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. |
 | [`marie-kondo`](plugins/complexity/skills/marie-kondo/SKILL.md) | Aggressive refactor pass that cuts code that doesn't earn its keep. |
 
