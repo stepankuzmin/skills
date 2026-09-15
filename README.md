@@ -33,6 +33,26 @@ codex plugin marketplace add stepankuzmin/skills
 codex plugin add complexity@stepankuzmin
 ```
 
+## GL JS
+
+| Skill | Description |
+| --- | --- |
+| [`flyover`](plugins/gl-js/skills/flyover/SKILL.md) | Turn a text description into a cinematic 3D map flyover: GeoJSON camera waypoints plus a self-contained Mapbox GL JS page. Needs `MAPBOX_ACCESS_TOKEN`. |
+
+Claude Code plugin:
+
+```bash
+claude plugin marketplace add stepankuzmin/skills
+claude plugin install gl-js@stepankuzmin
+```
+
+Codex plugin:
+
+```bash
+codex plugin marketplace add stepankuzmin/skills
+codex plugin add gl-js@stepankuzmin
+```
+
 ## Recommendations
 
 | Skill | Description |

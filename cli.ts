@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // The CLI for this marketplace.
 //
-//   ./cli.ts version    Propagate version and description into every plugin manifest
+//   ./cli.ts version    Propagate the version and each plugin's marketplace description into its manifests
 //
-// The two marketplace.json files carry the description by hand.
+// The two marketplace.json files carry the descriptions by hand.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -26,12 +26,14 @@ function field(record: Record<string, unknown>, key: string, where: string): str
 
 // A string source is a local plugin path; an object source is someone else's
 // repo and has no manifest here to update.
-function localPlugins(input: unknown): string[] {
+function localPlugins(input: unknown): { path: string; description: string }[] {
   if (!isRecord(input) || !Array.isArray(input.plugins)) {
     throw new Error(`${MARKETPLACE}: "plugins" must be an array`);
   }
   return input.plugins.flatMap((entry: unknown) =>
-    isRecord(entry) && typeof entry.source === "string" ? [entry.source] : [],
+    isRecord(entry) && typeof entry.source === "string"
+      ? [{ path: entry.source, description: field(entry, "description", `${MARKETPLACE}: ${entry.source}`) }]
+      : [],
   );
 }
 
@@ -54,10 +56,9 @@ if (process.argv[2] !== "version") {
 const pkg = readJson(join(root, "package.json"));
 if (!isRecord(pkg)) throw new Error("package.json: must be an object");
 const version = field(pkg, "version", "package.json");
-const description = field(pkg, "description", "package.json");
 const changed: string[] = [];
 
-for (const path of localPlugins(readJson(MARKETPLACE))) {
+for (const { path, description } of localPlugins(readJson(MARKETPLACE))) {
   for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
     const manifestPath = join(root, path, manifest);
     if (!existsSync(manifestPath)) continue; // a plugin may not ship every harness's manifest
@@ -72,7 +73,7 @@ for (const path of localPlugins(readJson(MARKETPLACE))) {
   }
 }
 
-console.log(`skills ${version} — ${description}`);
+console.log(`skills ${version}`);
 console.log(
   changed.length === 0
     ? "Manifests already current."

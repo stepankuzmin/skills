@@ -1,0 +1,39 @@
+{
+  "name": "gl-js",
+  "version": "0.2.0",
+  "description": "Mapbox GL JS skills: cinematic flyovers from a text description.",
+  "author": {
+    "name": "Stepan Kuzmin",
+    "url": "https://github.com/stepankuzmin"
+  },
+  "homepage": "https://github.com/stepankuzmin/skills",
+  "repository": "https://github.com/stepankuzmin/skills",
+  "license": "MIT",
+  "keywords": [
+    "mapbox",
+    "gl-js",
+    "flyover",
+    "map",
+    "animation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "GL JS",
+    "shortDescription": "Mapbox GL JS skills",
+    "longDescription": "Skills for building with Mapbox GL JS. Flyover turns a text description into camera waypoints and a self-contained HTML page that animates a cinematic 3D flyover.",
+    "developerName": "Stepan Kuzmin",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/stepankuzmin/skills",
+    "defaultPrompt": [
+      "Create a dynamic drone flyover of Central Park at dusk",
+      "Orbit the Eiffel Tower at night",
+      "Fly along the Golden Gate Bridge from the Marin side"
+    ],
+    "brandColor": "#4264FB"
+  }
+}

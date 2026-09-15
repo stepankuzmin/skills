@@ -1,0 +1,163 @@
+---
+name: flyover
+description: Turn a text description into a cinematic 3D map flyover. Produces a GeoJSON list of camera waypoints and a self-contained HTML page that animates them with Mapbox GL JS, using the token in MAPBOX_ACCESS_TOKEN. Use whenever the user asks for a flyover, fly-through, drone shot, aerial tour, orbit around a landmark, camera path, or animated map of a place, route, or region, even if they never say "Mapbox" or "map". Also use when they want to tweak an existing flyover's speed, altitude, path, or mood.
+---
+
+# Flyover
+
+You are the drone pilot and the editor. The user names a place and a mood.
+You choose the shot, write the waypoints, build the page, and open it.
+
+Output is two files next to each other, in the working directory unless the
+user names another place:
+
+- `<slug>.geojson`, the flight. Format in `references/waypoints.md`.
+- `<slug>.html`, built from `assets/template.html` by `scripts/build.mjs`.
+
+The page is the map, the camera path, and Space to pause. Nothing else. A
+title card, captions, a progress bar, or controls are the user's call: offer
+them at the end, never bake them in.
+
+## Workflow
+
+1. Read the brief in this order, because each answer constrains the next:
+   subject, then the one camera move, then speed, then mood. Decide as a
+   pilot would instead of asking. Default length is 45 seconds.
+2. Get coordinates. Use what you know for famous places. When unsure,
+   geocode:
+
+   ```bash
+   curl -s "https://api.mapbox.com/search/geocode/v6/forward?q=Bethesda+Terrace+Central+Park&limit=1&access_token=$MAPBOX_ACCESS_TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).features[0].geometry.coordinates))'
+   ```
+
+   Geocoding returns wrong hits for small park features. Sanity-check every
+   result against the coordinates you already know. Keep the token in the
+   shell variable. Never paste its value into the conversation or a file
+   other than the built HTML.
+3. Design the shot and write `<slug>.geojson`. See "Designing the shot".
+4. Build and read the report:
+
+   ```bash
+   node <skill-dir>/scripts/build.mjs <slug>.geojson
+   ```
+
+   The script validates the flight, inlines the token and the latest Mapbox
+   GL JS, and prints one line per leg with speed, time, altitude, and turn
+   angle, then warnings for hairpins, speed out of proportion to altitude,
+   and buildings taller than the camera within 150 m of the path. You cannot
+   watch the result, so this report is your slow-motion check. Fix every
+   warning unless the brief asked for that exact thing, then rebuild.
+5. Open it: `open <slug>.html`. If the page stays black, the browser is
+   blocking tile workers on `file://`. Serve the folder instead:
+   `python3 -m http.server 8765`.
+6. If the Artifact tool is available, also publish `<slug>.html`. The page
+   carries the token, so a permission classifier may deny the publish.
+   Report the denial and move on. The local file is the reference: the
+   artifact sandbox may block Mapbox tile requests.
+7. Report the two paths, describe the flight in two sentences, and say that
+   editing the GeoJSON and rerunning the build changes the flight. Offer
+   overlays as the follow-up if they would help.
+
+## Designing the shot
+
+### One move, done well
+
+Name the move before placing a single waypoint. A flight with one clear
+move reads as a film. A flight that tries three moves reads as a screensaver.
+
+| Move | How | Good for |
+| --- | --- | --- |
+| Orbit | `scripts/orbit.mjs` around the subject, one altitude, every waypoint looks at it. Eight or more points, or it turns into a polygon. | A landmark, a stadium, a bridge. |
+| Reveal | Start low and close behind a detail, rise and pull back until the whole subject is in frame. | A park, a campus, a district. |
+| Tracking | Waypoints along a street, river, or ridge, no `lookAt`, so the camera looks ahead. | Routes, valleys, coastlines. |
+| Approach | Start far and high, descend toward the subject, `hold` at the end. | An arrival, a hero shot. |
+| Pass-by | Straight line past the subject, `lookAt` fixed on it, so it pans across the frame. | Skylines, waterfronts. |
+
+Spend the boldness in one place. One long bearing sweep, one dive, or one
+climb per flight. Everything around it stays quiet.
+
+### Frame one
+
+The viewer watches the first second more than any other. The page fades in
+with the camera already at cruise speed, so the first waypoint carries the
+whole opening:
+
+- The subject is in frame and nothing stands between camera and target.
+  Start over open ground: water, a park, a plaza, a wide avenue. Over a
+  downtown, start above the tallest building within 150 m by 100 m or more.
+  The build report tells you when you are below a roof.
+- The camera is already moving in the direction the flight will keep.
+  Do not `hold` on the first waypoint.
+- The target is within about ten altitudes. Farther, and the pitch clamps at
+  85 degrees and the frame becomes sky.
+
+### Speed
+
+Speed is the first thing viewers feel and the first thing briefs mention.
+Set `speed` in m/s whenever the brief says anything about pace, and use
+`duration` only when it names a length.
+
+| Brief says | Cruise speed | Ramp | Holds |
+| --- | --- | --- | --- |
+| calm, slow, cinematic, night | altitude / 8 | 2000 ms | one or two, up to 2 s |
+| nothing about pace | altitude / 5 | 1500 ms | at most one |
+| dynamic, fast, energetic, drone racing | altitude / 3 | 800 ms | none |
+
+Altitude is the lowest waypoint altitude on the leg. Per-waypoint `speed`
+changes pace mid-flight. A fast pass that slows into an orbit is a stronger
+shot than one constant speed.
+
+| Scene | Altitude |
+| --- | --- |
+| Landmark orbit | 150 to 400 m, radius about 1.5 times the altitude |
+| City district | 250 to 600 m |
+| Street canyon | 60 to 120 m, over a wide avenue or river only |
+| Mountains, coast | 1500 to 4000 m |
+| Country, region | 10 to 60 km |
+
+### Motion that feels real
+
+These come from the same rules that make interface motion feel right:
+
+- Constant speed inside a leg, ramps only where speed changes or the camera
+  stops. The velocity model does this for you. Do not fake it with extra
+  waypoints.
+- Nothing pops. The page resolves ground elevation from DEM tiles and
+  preloads every tile on the path before frame one, so a long flight waits a
+  few seconds longer to start and then never stutters. Do not shorten a
+  flight to dodge the wait.
+- Nothing stops dead. A `hold` decelerates over one ramp and accelerates
+  out over another. The flight ends with the same deceleration.
+- Ease-out, never ease-in. The flight is at full speed on frame one and
+  slows into its ending. A flight that starts slow feels sluggish for its
+  whole length.
+- Asymmetry feels alive. A pass-by that climbs while it pans, an orbit that
+  gains 50 m per quarter turn, an approach that slows as it descends.
+- Match the personality. A night skyline is slow and level. A sports venue
+  is fast with sharp ramps. A national park is high, slow, and wide.
+- Reduced motion is respected by the page: it shows frame one and waits for
+  Space.
+
+### Spacing
+
+Space waypoints evenly along the path, so the spline stays smooth. Two
+waypoints closer than a fifth of the others make the camera wobble. A turn
+sharper than 100 degrees between waypoints overshoots; add a waypoint or
+widen the turn. The report flags both.
+
+`lookAt` moves too. Interpolating the target from one landmark to the next
+pans the camera. Sliding the target from far to near as the drone descends
+tilts it down. A target with altitude, such as a tower top at
+`[lng, lat, 300]`, keeps the horizon out of the frame.
+
+## Mistakes to avoid
+
+- A building in front of the lens. Raise the camera or move over open
+  ground. Never accept a clearance warning on the first waypoint.
+- Ignoring a speed word in the brief. "Dynamic" means altitude / 3 and no
+  holds, whatever the default says.
+- Holds everywhere. Each stop resets the viewer's attention. One is a beat,
+  three is a slideshow.
+- Editing `template.html` for one flight. Change the GeoJSON. Change the
+  template only when every future flyover needs the change.
+- Adding UI. The page has none by design. Offer it, do not ship it.
