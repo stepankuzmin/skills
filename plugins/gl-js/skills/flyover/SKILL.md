@@ -20,9 +20,15 @@ records the flight to a video file. A title card, captions, a progress bar,
 or controls are for the user to ask for. Offer them at the end and never
 bake them in.
 
-The page carries no token. It reads `access_token` from its URL and asks for
-one when the URL has none. The style is Mapbox Standard with default options,
-and terrain is whatever the style renders. The build prints the link.
+The page carries no token. It reads `access_token` from its URL, asks for one
+when the URL has none, and puts what it is given back in the URL. The style is
+Mapbox Standard with default options. The build prints the link.
+
+The page draws into a fixed 1280 by 720 frame that CSS scales to the window,
+letterboxed. That size is what makes the flight predictable: the zoom the
+camera reaches depends on the frame's height, so a fixed frame lets the build
+compute every zoom before the page loads, and the recorded video is that size
+on every machine.
 
 ## Workflow
 
@@ -47,17 +53,27 @@ and terrain is whatever the style renders. The build prints the link.
    node <skill-dir>/scripts/build.ts <slug>.geojson
    ```
 
-   The script validates the flight, pins the latest stable Mapbox GL JS from
-   `versions.json`, and prints one line per leg with speed, time, altitude,
-   and turn angle, then warnings for hairpins, speed out of proportion to
-   altitude, and buildings taller than the camera within 150 m of the path.
-   You cannot watch the result, so read the report instead. Fix every
-   warning unless the brief asked for that exact thing, then rebuild. The
-   last line is the link, token included.
+   The build reads the style's DEM, solves each waypoint's ground, altitude,
+   pitch, and zoom against each other until they agree, and bakes the result
+   into the page, so the page runs no terrain queries and flies the same path
+   every time. `MAPBOX_ACCESS_TOKEN` must be set or the build stops.
+
+   The report prints one line per waypoint with ground elevation, absolute
+   camera altitude, pitch, and the zoom it will render at, then one line per
+   leg with speed, time, altitude, and turn angle. It warns about hairpins,
+   speed out of proportion to altitude, buildings within 150 m, terrain the
+   camera passes within 100 m of, a `lookAt` that sits below a nearby summit,
+   and waypoints that render where Standard has flattened the terrain. You
+   cannot watch the result, so read the report instead. Fix every warning
+   unless the brief asked for that exact thing, then rebuild. The last line
+   is the link, token included.
 5. Open the link: `open "<link>"`. If the page stays black, the browser is
    blocking tile workers on `file://`. Serve the folder instead with
    `python3 -m http.server 8765` and use the same query string.
-6. Report the two paths and the link, describe the flight in two sentences,
+6. Look at the result. Drive the page with a browser tool, wait for the
+   fade-in, and screenshot it. The report cannot tell you that the frame is
+   empty, flat, or pointed at sky.
+7. Report the two paths and the link, describe the flight in two sentences,
    and say that editing the GeoJSON and rerunning the build changes the
    flight. Mention that the page's button downloads the flight as a video.
    Offer overlays as the follow-up if they would help. Skip the Artifact
@@ -118,19 +134,42 @@ shot than one constant speed.
 | Landmark orbit | 150 to 400 m, radius about 1.5 times the altitude |
 | City district | 250 to 600 m |
 | Street canyon | 60 to 120 m, over a wide avenue or river only |
-| Mountains, coast | 1500 to 4000 m |
+| Mountains, coast | 3000 to 5000 m, 12 km or more from the subject |
 | Country, region | 10 to 60 km |
+
+### Terrain and the zoom band
+
+Standard draws terrain at full height between z7 and z12 and ramps it to
+nothing by z13.7. A waypoint does not set the zoom. Mapbox GL derives it from
+how far the camera sits above the point it looks at:
+
+```
+above = camera altitude - target altitude, in meters
+above >= 20600 * cos(pitch) * cos(latitude)    keeps the waypoint at z12
+```
+
+A camera 1500 m above a summit, 14 km away, pitched 84 degrees, renders at
+z12 with the mountain at its full height. Move that camera to 500 m above the
+summit and 3 km away and it renders at z14, where Standard draws no terrain
+and the peak becomes a flat map. The hero shot from a peak's own height is
+not available on Standard. The shot that is available is high, far, and
+nearly horizontal, and the pitch clamps at 85 degrees.
+
+Flying lower is what a city asks for and terrain there is flat anyway, so the
+band only binds in mountains. The build prints the zoom per waypoint and the
+climb that would bring it back into the band.
 
 ### Motion that feels real
 
 - Constant speed inside a leg, ramps only where speed changes or the camera
   stops. The velocity model does this for you. Do not fake it with extra
   waypoints.
-- Nothing pops. The page reads ground elevation from the style's terrain
-  and preloads every tile on the path before frame one, so a long flight
-  waits a few seconds longer to start and then never stutters. Do not
-  shorten a flight to dodge the wait. The preload also keeps the recorded
-  video smooth.
+- Nothing pops. Before frame one the page flies the whole path once with the
+  map hidden, so every tile is in the cache when the flight starts. That
+  warm-up costs roughly a second per kilometer of path: a 49 km flight waits
+  about 43 seconds before it begins. Do not shorten a flight to dodge the
+  wait, and do not report the wait as a hang. It is also what keeps the
+  recorded video free of popping terrain.
 - Nothing stops dead. A `hold` decelerates over one ramp and accelerates
   out over another. The flight ends with the same deceleration.
 - Ease-out, never ease-in. The flight is at full speed on frame one and
@@ -189,5 +228,12 @@ tilts it down. A target with altitude, such as a tower top at
 - Editing `template.html` for one flight. Change the GeoJSON. Change the
   template only when every future flyover needs the change.
 - Adding UI. The page has one button. Offer more, do not ship them.
+- Flying a mountain close and low. It lands above z13.7, where Standard
+  draws no terrain, and the peak renders flat. Climb and pull back until the
+  report says z12, and never add terrain settings to the page.
+- Aiming a target at a peak's name rather than its top. Geocoders and
+  well-known coordinates land on a shoulder or a hut, hundreds of meters
+  below the summit, and the shot frames the slope. The build names the higher
+  point when it finds one.
 - Changing the style or the light preset. The page renders Standard as it
   ships.

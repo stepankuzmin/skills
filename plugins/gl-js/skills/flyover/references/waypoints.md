@@ -37,10 +37,10 @@ times are the ones the page flies.
 
 ## Feature geometry
 
-`coordinates` is `[lng, lat, altitude]`. Altitude is meters above the ground
-the style renders at that point, so the same number works over Manhattan and
-over the Alps. Standard draws terrain flat above zoom 13.7, so a low city
-flight measures from sea level.
+`coordinates` is `[lng, lat, altitude]`. Altitude is meters above the ground,
+so the same number works over Manhattan and over the Alps. The build reads
+that ground from the style's DEM and bakes it into the page, which is why the
+build needs a token.
 
 ## Feature properties
 
@@ -62,15 +62,16 @@ asks for one when the URL has none.
 
 ## Page behavior
 
-The page renders Mapbox Standard as it ships and never adds terrain. When
-the style has terrain, the page visits every waypoint before frame one,
-waits for its tiles, and reads the ground under camera and target with
-`queryTerrainElevation`. This works with any DEM source and any
-exaggeration, including one that changes with zoom. Altitudes above ground
-become absolute and never depend on which terrain tiles load mid-flight.
-The page then preloads every tile along the path, waits for the map to go
-idle and the network to go quiet, and fades in over 300 ms with the camera
-already moving. Space pauses and resumes from the same spot. With
+The page renders Mapbox Standard as it ships and never adds terrain or reads
+elevation. Every altitude arrives already absolute, solved by the build
+against the style's DEM, so the flight cannot change with the tiles that
+happen to have loaded. The page draws into a fixed 1280 by 720 frame that CSS
+scales to the window, which is what keeps the rendered zoom equal to the zoom
+the build computed. Before frame one it flies the whole path once with the map hidden, stopping
+about every kilometer and waiting for the map to go idle, so every tile the
+flight draws is already in the cache. The page also raises `minTileCacheSize`,
+because the default holds one viewport and a long flight would evict its own
+warm-up. It then fades in over 300 ms with the camera already moving. Space pauses and resumes from the same spot. With
 `prefers-reduced-motion` the page shows the first frame and waits for
 Space. The one button restarts the flight, records the canvas with
 `MediaRecorder`, and downloads the video when the flight ends. The page is
