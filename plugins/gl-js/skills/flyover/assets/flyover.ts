@@ -1,6 +1,6 @@
 // Everything a generated flyover page needs. The first half is pure math
-// shared with the build report; the second half touches the map and the
-// clock. Imports cleanly in Node: nothing runs at load.
+// shared with the build report. The second half touches the map and the
+// clock. Nothing runs at import, so Node can load it for the build report.
 
 declare const mapboxgl: any;
 
@@ -269,12 +269,12 @@ export function distanceAt(plan: Plan, time: number): number {
 }
 
 // Compiles the flight against the terrain the style renders, whatever its
-// DEM source and exaggeration. The only oracle is the renderer: put the
-// camera at each waypoint's pose, wait for its tiles, and read the ground
-// under camera and target with queryTerrainElevation. Null means the style
-// draws no terrain at that zoom, so the ground is 0. Adding ground raises the
-// camera, which changes the zoom, which can change the style's exaggeration,
-// so the passes repeat until the answer stops moving.
+// DEM source and exaggeration. Puts the camera at each waypoint's pose, waits
+// for its tiles, and reads the ground under camera and target with
+// queryTerrainElevation. Null means the style draws no terrain at that zoom,
+// so the ground is 0. Adding ground raises the camera, which changes the
+// zoom, which can change the style's exaggeration, so the passes repeat
+// until the values stop moving.
 export async function compileOnTerrain(map: any, fc: FlightCollection): Promise<Flight> {
   let flight = compileFlight(fc);
   if (!map.getTerrain()) return flight;
