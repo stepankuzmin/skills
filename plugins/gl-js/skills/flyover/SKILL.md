@@ -1,12 +1,13 @@
 ---
 name: flyover
-description: Turn a text description into a cinematic 3D map flyover. Produces a GeoJSON list of camera waypoints and a self-contained HTML page that animates them with Mapbox GL JS, using the token in MAPBOX_ACCESS_TOKEN. Use whenever the user asks for a flyover, fly-through, drone shot, aerial tour, orbit around a landmark, camera path, or animated map of a place, route, or region, even if they never say "Mapbox" or "map". Also use when they want to tweak an existing flyover's speed, altitude, path, or mood.
+description: Turn a text description or an existing path into a cinematic 3D map flyover. Produces a GeoJSON list of camera waypoints and a self-contained HTML page that animates them with Mapbox GL JS, using the token in MAPBOX_ACCESS_TOKEN. Use whenever the user asks for a flyover, fly-through, drone shot, aerial tour, orbit around a landmark, camera path, or animated map of a place, route, or region, or wants to fly along a GPS track, GPX, KML, or GeoJSON file, even if they never say "Mapbox" or "map". Also use when they want to tweak an existing flyover's speed, altitude, path, or mood.
 ---
 
 # Flyover
 
-You are the drone pilot and the editor. The user names a place and a mood.
-You choose the shot, write the waypoints, build the page, and open it.
+You are the drone pilot and the editor. The user names a place, a route, or
+a file with a track, and a mood. You choose the shot, write the waypoints,
+build the page, and open it.
 
 Output is two files next to each other, in the working directory unless the
 user names another place:
@@ -40,6 +41,7 @@ and terrain is whatever the style renders. The build prints the link.
    shell variable. The only place its value belongs is the link the build
    prints.
 3. Design the shot and write `<slug>.geojson`. See "Designing the shot".
+   When the path already exists as a file, see "Flying an existing path".
 4. Build and read the report:
 
    ```bash
@@ -143,6 +145,30 @@ These come from the same rules that make interface motion feel right:
   is fast with sharp ramps. A national park is high, slow, and wide.
 - Reduced motion is respected by the page: it shows frame one and waits for
   Space.
+
+### Flying an existing path
+
+The user may hand you a GPX, KML, TCX, CSV, or GeoJSON LineString: a hike, a
+ride, a road trip, a race course. The skill has no importer on purpose. The
+waypoint GeoJSON in `references/waypoints.md` is the API; you read the file
+and write that format, so any input the model can read is supported and the
+skill never grows a parser per format.
+
+- Read the coordinates yourself and note the length. A track has hundreds of
+  points; a flight wants 8 to 20 waypoints. Keep the first and the last,
+  then keep points spaced evenly by distance, and add one at each real
+  change of direction. Drop everything else. GPS jitter becomes wobble if
+  you keep it.
+- The track is the subject, so use the Tracking move: no `lookAt`, the
+  camera looks ahead along the path. A `lookAt` on a summit or a finish
+  line is the one exception.
+- Altitude is above ground, so a mountain track and a city ride take the
+  same numbers. Pick from the scene table: a trail at 150 to 400 m, a road
+  trip at 600 to 2000 m.
+- Let speed come from `duration` unless the brief says otherwise. A 40 km
+  ride in 45 s reads as a helicopter; a 2 km walk in 45 s reads as a drone.
+- Tracks recorded on the ground hug the ground. Widen hairpins as the
+  report suggests and skip sections that double back.
 
 ### Spacing
 

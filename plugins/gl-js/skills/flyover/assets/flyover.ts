@@ -47,8 +47,10 @@ export interface Flight {
   options: FlightOptions;
   plan: Plan;
   samples: Sample[];
-  bounds: [LngLat, LngLat]; // every waypoint and target
+  waypoints: { lngLat: LngLat; lookLngLat: LngLat }[];
 }
+
+export interface Ground { camera: number; look: number } // meters, per waypoint
 
 type Vec3 = [number, number, number]; // mercator x, mercator y, meters
 interface Sample { pos: Vec3; look: Vec3; d: number }
@@ -67,30 +69,25 @@ export function lngLatOf([x, y]: [number, number]): LngLat {
 
 const metersPerUnit = (lat: number) => EARTH * Math.cos(lat * rad);
 
-// groundAt returns the ground elevation in meters at a point belonging to
-// waypoint i, so altitudes above ground become absolute. The build passes
-// nothing and reports altitudes as given.
-export function compileFlight(fc: FlightCollection, groundAt: (p: LngLat, i: number) => number = () => 0): Flight {
+// ground[i] is the ground elevation under waypoint i's camera and target, so
+// altitudes above ground become absolute. The build passes nothing and
+// reports altitudes as given.
+export function compileFlight(fc: FlightCollection, ground: Ground[] = []): Flight {
   const options: FlightOptions = { ...defaults, ...fc.properties };
   const points = fc.features.filter((f) => f.geometry.type === "Point");
   const meanLat = points.reduce((a, f) => a + f.geometry.coordinates[1], 0) / points.length;
   const scale = metersPerUnit(meanLat);
-  const bounds: [LngLat, LngLat] = [[Infinity, Infinity], [-Infinity, -Infinity]];
-  const extend = ([lng, lat]: LngLat) => {
-    bounds[0] = [Math.min(bounds[0][0], lng), Math.min(bounds[0][1], lat)];
-    bounds[1] = [Math.max(bounds[1][0], lng), Math.max(bounds[1][1], lat)];
-  };
 
   const nodes = points.map((f, i) => {
     const [lng, lat, agl = 100] = f.geometry.coordinates;
     const p = f.properties ?? {};
-    const here: LngLat = [lng, lat];
+    const lngLat: LngLat = [lng, lat];
     const lookLngLat: LngLat = p.lookAt ? [p.lookAt[0], p.lookAt[1]] : ahead(points, i, agl * 3, scale);
-    extend(here);
-    extend(lookLngLat);
     return {
-      pos: [...mercator(here), Math.max(agl, options.minAltitude) + groundAt(here, i)] as Vec3,
-      look: [...mercator(lookLngLat), (p.lookAt?.[2] ?? 0) + groundAt(lookLngLat, i)] as Vec3,
+      lngLat,
+      lookLngLat,
+      pos: [...mercator(lngLat), Math.max(agl, options.minAltitude) + (ground[i]?.camera ?? 0)] as Vec3,
+      look: [...mercator(lookLngLat), (p.lookAt?.[2] ?? 0) + (ground[i]?.look ?? 0)] as Vec3,
       hold: p.hold ?? 0,
       speed: p.speed,
     };
@@ -98,7 +95,7 @@ export function compileFlight(fc: FlightCollection, groundAt: (p: LngLat, i: num
 
   const samples = samplePath(nodes, scale);
   const plan = planFlight(nodes.map((n, i) => ({ d: samples[i * SAMPLES].d, hold: n.hold, speed: n.speed })), options);
-  return { options, plan, samples, bounds };
+  return { options, plan, samples, waypoints: nodes.map(({ lngLat, lookLngLat }) => ({ lngLat, lookLngLat })) };
 }
 
 export function poseAt(flight: Flight, time: number): Pose {
@@ -271,43 +268,31 @@ export function distanceAt(plan: Plan, time: number): number {
   return p.from + dA + (vc * (T - ta - td)) / 1000 + (vc * tau + (ve - vc) * td * S(tau / td)) / 1000;
 }
 
-// Compiles the flight against the terrain the style renders. Every waypoint
-// and target is fitted into one top-down view so their terrain tiles load,
-// raw elevation is read through queryTerrainElevation, and the style's
-// exaggeration is applied at the zoom the camera has at that waypoint. A
-// style without terrain gives ground 0. The fit stops at zoom 12 because
-// Standard turns terrain off above zoom 13.7 and the query returns null then.
+// Compiles the flight against the terrain the style renders, whatever its
+// DEM source and exaggeration. The only oracle is the renderer: put the
+// camera at each waypoint's pose, wait for its tiles, and read the ground
+// under camera and target with queryTerrainElevation. Null means the style
+// draws no terrain at that zoom, so the ground is 0. Adding ground raises the
+// camera, which changes the zoom, which can change the style's exaggeration,
+// so the passes repeat until the answer stops moving.
 export async function compileOnTerrain(map: any, fc: FlightCollection): Promise<Flight> {
-  const terrain = map.getTerrain();
-  if (!terrain) return compileFlight(fc);
-  const flat = compileFlight(fc);
-  const zooms = flat.plan.waypointTimes.map((t) => {
-    setCamera(map, poseAt(flat, t));
-    return map.getZoom();
-  });
-  map.fitBounds(flat.bounds, { padding: 64, pitch: 0, bearing: 0, maxZoom: 12, duration: 0 });
-  await idle(map);
-  const exaggeration = exaggerationAt(terrain.exaggeration);
-  return compileFlight(fc, (p, i) => (map.queryTerrainElevation(p, { exaggerated: false }) ?? 0) * exaggeration(zooms[i]));
-}
-
-// The style's terrain exaggeration as a function of zoom: a number, or the
-// linear zoom interpolation Standard uses. Anything else counts as 1.
-function exaggerationAt(spec: unknown): (zoom: number) => number {
-  if (spec === undefined) return () => 1;
-  if (typeof spec === "number") return () => spec;
-  if (Array.isArray(spec) && spec[0] === "interpolate" && spec[1]?.[0] === "linear" && spec[2]?.[0] === "zoom") {
-    const stops: number[] = spec.slice(3);
-    return (zoom) => {
-      if (zoom <= stops[0]) return stops[1];
-      for (let k = 2; k < stops.length; k += 2) {
-        if (zoom <= stops[k]) return stops[k - 1] + ((stops[k + 1] - stops[k - 1]) * (zoom - stops[k - 2])) / (stops[k] - stops[k - 2]);
-      }
-      return stops[stops.length - 1];
-    };
+  let flight = compileFlight(fc);
+  if (!map.getTerrain()) return flight;
+  const ground: Ground[] = flight.waypoints.map(() => ({ camera: 0, look: 0 }));
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = false;
+    for (const [i, wp] of flight.waypoints.entries()) {
+      setCamera(map, poseAt(flight, flight.plan.waypointTimes[i]));
+      await idle(map);
+      const at = (p: LngLat) => map.queryTerrainElevation(p, { exaggerated: true }) ?? 0;
+      const g = { camera: at(wp.lngLat), look: at(wp.lookLngLat) };
+      moved ||= Math.abs(g.camera - ground[i].camera) > 1 || Math.abs(g.look - ground[i].look) > 1;
+      ground[i] = g;
+    }
+    if (!moved) break;
+    flight = compileFlight(fc, ground);
   }
-  console.warn("terrain exaggeration not understood, using 1:", spec);
-  return () => 1;
+  return flight;
 }
 
 export function setCamera(map: any, pose: Pose) {
