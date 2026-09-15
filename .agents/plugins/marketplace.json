@@ -9,7 +9,7 @@
       "description": "Grug agent and grug-review skill: clarity-first code review.",
       "source": {
         "source": "local",
-        "path": "./plugins/stepankuzmin-skills"
+        "path": "./plugins/complexity"
       },
       "policy": {
         "installation": "AVAILABLE",

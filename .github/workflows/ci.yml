@@ -12,6 +12,6 @@ jobs:
       - uses: actions/checkout@v7
       - run: npm install -g @anthropic-ai/claude-code@latest @openai/codex@latest
       - run: claude plugin validate .
-      - run: claude plugin validate plugins/stepankuzmin-skills
+      - run: claude plugin validate plugins/complexity
       - run: codex plugin marketplace add .
       - run: codex plugin add complexity@stepankuzmin
