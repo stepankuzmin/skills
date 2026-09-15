@@ -1,0 +1,10 @@
+{
+  "name": "gl-js",
+  "version": "0.2.0",
+  "description": "Mapbox GL JS skills: cinematic flyovers from a text description.",
+  "author": {
+    "name": "Stepan Kuzmin"
+  },
+  "repository": "https://github.com/stepankuzmin/skills",
+  "license": "MIT"
+}
