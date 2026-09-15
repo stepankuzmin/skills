@@ -1,67 +1,52 @@
 ---
 name: grug-review
-description: Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. Use when reviewing a diff, a pull request, or changed files, and when the user says "review this", "grug review", "code review", "check this", or "look for bugs". Security issues (injection, auth bypass, data exposure) count as correctness findings. An empty review is the correct review when nothing is wrong.
+description: Review changed code for proven bugs and harmful complection. Use for a diff, pull request, or changed files. Every finding needs a concrete failure or a concrete simpler version.
 ---
-Do not manufacture feedback. Post findings only when you can prove them.
-An empty review is the correct review when nothing is wrong.
 
-## Scope
+# Grug review
 
-Review added and changed lines. Cite pre-existing code only as context for a
-finding about changed code.
+Grug does not invent findings. If grug cannot prove it, grug drops it.
 
-Skip what a linter or formatter already catches. Skip generated files,
-lockfiles, and vendored code.
+## Read the change
 
-## Correctness
+Read the user request, plan, or specification when available. Check its required
+behavior, constraints, preserved behavior, and non-goals. Review changed lines
+and directly affected final code, including old code the change should have
+deleted.
 
-Before posting a correctness finding, answer this question:
-Can I describe a specific failure scenario with concrete inputs, a reachable
-code path, and an observable incorrect output?
+Ask why odd code exists. Skip generated files, lockfiles, vendored code, and
+formatter or linter issues.
 
-If no, drop it. Do not post theoretical concerns, pattern-match warnings, or
-issues where you cannot trace the actual failure path.
+## Prove correctness
 
-Security bugs (injection, auth bypass, data exposure) are correctness findings.
-The failure scenario is the unauthorized access or exposure itself.
+Post only when you can name the input or state, reachable path, and observable
+wrong result. Unauthorized access or data exposure is a wrong result.
 
-## Complexity
+Before posting, check whether the same function or caller already handles the
+case and whether an apparently unused item is used by the type system.
 
-The yardstick is the 3 AM test: can a tired developer understand and change
-this code without context?
+## Prove complection
 
-Flag new complexity only when you can write the simpler version: a wrapper
-around a wrapper, an abstraction with one implementation, a dense chain that
-needs a comment to explain it, a shared utility created to avoid duplicating
-three simple lines. The simpler version is the finding.
+Post only when you can write simpler final code and say what it gives up.
 
-If you cannot write it, you have no finding. The complexity may be load-bearing.
+Look for dual authority, policy spread across callers, effects mixed into
+decisions, or lifecycle state that changes no allowed events.
 
-Two things earn their keep. An abstraction with three or more callers, and a
-check at a real trust boundary. Leave them alone.
+Three real callers or a trust boundary may justify an abstraction. They do not
+prove it. A deep module hides hard work behind a small interface. Keep one
+authority for each decision.
 
-## Before you post
+Treat every new comment or explanatory docstring as a complection finding.
+Replace it with clear names or structure.
 
-Ask why the code is the way it is. A weird check may guard a bug you have not
-seen.
+## Report
 
-Then run every finding through this gate:
+Post at most five findings, most important first.
 
-- Is the bug already handled elsewhere in the same function?
-- Is the "unused" thing used in a type position?
-- Is the "missing check" already done by the caller?
+- A correctness finding names the file, line, failure, and fix.
+- A complection finding names the file, line, simpler version, and tradeoff.
 
-If yes to any, drop it.
+Output findings only. If none pass, write exactly: `No issues found.`
 
-Cap the review at five findings, most severe first.
-
-## Output
-
-Correctness finding: file and line, what is wrong, the failure scenario
-(inputs, code path, observable behavior), the fix.
-
-Complexity finding: file and line, the simpler version, and what it gives up.
-
-Nothing else. No summary, no praise, no severity labels.
-
-If nothing passes either gate, post only: No issues found. Ship it.
+Finish after the findings. When the user wants fixes, suggest grug-implement.
+Suggest grug-design only when the review exposes an unresolved design choice.

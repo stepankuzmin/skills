@@ -1,57 +1,59 @@
 ---
 name: grug-implement
-description: Implement an accepted grug-design with the smallest clear diff. Use when applying a Grug plan or implementing a planned feature or refactor. If the design is missing, unclear, or conflicts with live code, use grug-design first.
+description: Implement a feature or refactor with the smallest clear diff. Use when the user gives the required behavior or enough context to infer it.
 ---
 
 # Grug implement
 
-Implement the latest `grug-design` the user accepted. Preserve proven behavior,
-not accidental structure. Choose the smallest clear diff that meets the plan.
+Grug writes the smallest untangled change that meets today's requirement.
 
-## Lock the design
+## Untangle first
 
-Before editing, find the accepted plan in the current context. It must state the
-required behavior, what must stay unchanged, where each decision belongs, the
-ordered changes, and the non-goals.
+Use an accepted plan when one exists. Otherwise derive the required behavior,
+constraints, behavior to preserve, and non-goals from the user's request and
+live code.
 
-If no accepted plan exists, a real design choice remains, or live code
-conflicts with the plan, use `grug-design` and get agreement. Resolve design
-questions there before editing.
+Name what is complected. Separate only the braid required by today's change.
 
-Read the target implementation, callers, and relevant tests. Ask why awkward
-code exists before removing it.
+Read the target code, callers, and relevant tests. Proceed when the context
+supports the smallest safe change. If missing information changes behavior,
+ask the user. If the missing work is design, suggest grug-design. A formal plan
+is not required.
 
-## Implement the plan
+## Make the change
 
-- Change the code that owns the behavior. Keep each decision with one owner.
-- Keep rules separate from storage, network calls, and clock reads. Use the
-  project's existing boundaries.
-- Add a shared boundary only when a small interface hides hard work and removes
-  caller special cases. Three real callers or a trust boundary must justify
-  sharing.
-- Delete code the change supersedes. Preserve code whose purpose is uncertain.
-- Keep unrelated cleanup out of the diff.
+Try deletion, a local change, an existing module or boundary, then the smallest
+new one. A new module must be deep: it hides more complexity than it adds. Keep
+one authority for each decision.
 
-If the implementation needs wrappers around wrappers, old and new code deciding
-the same thing, duplicated policy, or several owners for one decision, stop and
-return to `grug-design`. When existing code causes the problem, use the
-smallest behavior-preserving refactor that creates one clear boundary and
-removes the workaround. Treat a rewrite as a new design.
+Three real callers or a trust boundary may justify sharing. They do not prove
+it.
+
+Change the code that owns the behavior. Delete superseded code. Leave unrelated
+code alone.
+
+Keep policy separate from mechanism. Keep decisions pure and effects at existing
+boundaries. Add lifecycle state only when time changes which events are allowed.
+
+If the diff creates dual authority, old and new paths, wrappers around wrappers,
+or policy in callers, simplify it. If that changes the requested design, ask
+the user or suggest grug-design.
 
 ## Cull the diff
 
-Audit every changed line and every new file, type, helper, dependency, option,
-error handler, test, and comment. Ask what breaks today if it is removed. Delete
-it when the answer is nothing, future flexibility, or a trivial inline change.
+Audit every changed line and added file, type, helper, dependency, option,
+branch, error handler, test, and comment. Ask what current requirement breaks
+if it is removed. Remove it when the answer is nothing or future flexibility.
 
-Add no comments or explanatory docstrings by default. Keep one only when it
-records a non-obvious invariant or explains an external workaround that code
-cannot make clear. Delete restatements, investigation notes, ticket or URL
-references, and test explanations.
+Inline trivial single-use code when the caller becomes clearer. Write
+self-explanatory code without comments or explanatory docstrings. Use clear
+names and structure.
 
-## Verify and finish
+## Check and report
 
 Run the narrow existing checks that prove the changed behavior. Add a focused
 test only when behavior changed and existing tests cannot catch the regression.
 
-The final handoff lists only the change, deleted code, checks, and blockers.
+Report only the change, the complection removed, deleted code, checks, and
+blockers. When the user wants an independent second opinion, suggest
+grug-review.
