@@ -12,11 +12,17 @@ Output is two files next to each other, in the working directory unless the
 user names another place:
 
 - `<slug>.geojson`, the flight. Format in `references/waypoints.md`.
-- `<slug>.html`, built from `assets/template.html` by `scripts/build.mjs`.
+- `<slug>.html`, built from `assets/template.html` by `scripts/build.ts`.
 
-The page is the map, the camera path, and Space to pause. Nothing else. A
-title card, captions, a progress bar, or controls are the user's call: offer
-them at the end, never bake them in.
+The page is the map, the camera path, Space to pause, and one button that
+records the flight to a video file. Nothing else. A title card, captions, a
+progress bar, or controls are the user's call: offer them at the end, never
+bake them in.
+
+The page carries no token. It reads `access_token` from its URL and asks for
+one when the URL has none. Style is Mapbox Standard with default options;
+`style=` and any Standard config property such as `lightPreset=dusk` override
+it from the URL. The build prints the link with everything in place.
 
 ## Workflow
 
@@ -32,31 +38,33 @@ them at the end, never bake them in.
 
    Geocoding returns wrong hits for small park features. Sanity-check every
    result against the coordinates you already know. Keep the token in the
-   shell variable. Never paste its value into the conversation or a file
-   other than the built HTML.
+   shell variable. The only place its value belongs is the link the build
+   prints.
 3. Design the shot and write `<slug>.geojson`. See "Designing the shot".
 4. Build and read the report:
 
    ```bash
-   node <skill-dir>/scripts/build.mjs <slug>.geojson
+   node <skill-dir>/scripts/build.ts <slug>.geojson lightPreset=dusk
    ```
 
-   The script validates the flight, inlines the token and the latest Mapbox
-   GL JS, and prints one line per leg with speed, time, altitude, and turn
-   angle, then warnings for hairpins, speed out of proportion to altitude,
-   and buildings taller than the camera within 150 m of the path. You cannot
-   watch the result, so this report is your slow-motion check. Fix every
-   warning unless the brief asked for that exact thing, then rebuild.
-5. Open it: `open <slug>.html`. If the page stays black, the browser is
-   blocking tile workers on `file://`. Serve the folder instead:
-   `python3 -m http.server 8765`.
-6. If the Artifact tool is available, also publish `<slug>.html`. The page
-   carries the token, so a permission classifier may deny the publish.
-   Report the denial and move on. The local file is the reference: the
-   artifact sandbox may block Mapbox tile requests.
-7. Report the two paths, describe the flight in two sentences, and say that
-   editing the GeoJSON and rerunning the build changes the flight. Offer
-   overlays as the follow-up if they would help.
+   Any `key=value` argument goes into the link's query string; that is where
+   mood lives (`lightPreset`, `theme`, or `style=` for another style). The
+   script validates the flight, pins the latest stable Mapbox GL JS from
+   `versions.json`, and prints one line per leg with speed, time, altitude,
+   and turn angle, then warnings for hairpins, speed out of proportion to
+   altitude, and buildings taller than the camera within 150 m of the path.
+   You cannot watch the result, so this report is your slow-motion check.
+   Fix every warning unless the brief asked for that exact thing, then
+   rebuild. The last line is the link, token included.
+5. Open the link: `open "<link>"`. If the page stays black, the browser is
+   blocking tile workers on `file://`. Serve the folder instead with
+   `python3 -m http.server 8765` and use the same query string.
+6. Report the two paths and the link, describe the flight in two sentences,
+   and say that editing the GeoJSON and rerunning the build changes the
+   flight. Mention that the page's button downloads the flight as a video.
+   Offer overlays as the follow-up if they would help. Skip the Artifact
+   tool: the artifact sandbox blocks Mapbox requests, so the page renders
+   black there.
 
 ## Designing the shot
 
@@ -67,7 +75,7 @@ move reads as a film. A flight that tries three moves reads as a screensaver.
 
 | Move | How | Good for |
 | --- | --- | --- |
-| Orbit | `scripts/orbit.mjs` around the subject, one altitude, every waypoint looks at it. Eight or more points, or it turns into a polygon. | A landmark, a stadium, a bridge. |
+| Orbit | `scripts/orbit.ts` around the subject, one altitude, every waypoint looks at it. Eight or more points, or it turns into a polygon. | A landmark, a stadium, a bridge. |
 | Reveal | Start low and close behind a detail, rise and pull back until the whole subject is in frame. | A park, a campus, a district. |
 | Tracking | Waypoints along a street, river, or ridge, no `lookAt`, so the camera looks ahead. | Routes, valleys, coastlines. |
 | Approach | Start far and high, descend toward the subject, `hold` at the end. | An arrival, a hero shot. |
@@ -125,7 +133,8 @@ These come from the same rules that make interface motion feel right:
 - Nothing pops. The page resolves ground elevation from DEM tiles and
   preloads every tile on the path before frame one, so a long flight waits a
   few seconds longer to start and then never stutters. Do not shorten a
-  flight to dodge the wait.
+  flight to dodge the wait. The same preload is what makes the recorded
+  video smooth.
 - Nothing stops dead. A `hold` decelerates over one ramp and accelerates
   out over another. The flight ends with the same deceleration.
 - Ease-out, never ease-in. The flight is at full speed on frame one and
@@ -160,4 +169,6 @@ tilts it down. A target with altitude, such as a tower top at
   three is a slideshow.
 - Editing `template.html` for one flight. Change the GeoJSON. Change the
   template only when every future flyover needs the change.
-- Adding UI. The page has none by design. Offer it, do not ship it.
+- Adding UI. The page has one button by design. Offer more, do not ship it.
+- Putting `lightPreset` or `style` into the GeoJSON. The build drops them
+  and tells you the `key=value` argument to pass instead.
