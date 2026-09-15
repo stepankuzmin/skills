@@ -40,7 +40,7 @@ times are the ones the page flies.
 `coordinates` is `[lng, lat, altitude]`. Altitude is meters above the ground
 the style renders at that point, so the same number works over Manhattan and
 over the Alps. Standard draws terrain flat above zoom 13.7, so a low city
-flight measures from sea level, exactly where the buildings stand.
+flight measures from sea level.
 
 ## Feature properties
 
@@ -64,18 +64,18 @@ asks for one when the URL has none.
 
 The page renders Mapbox Standard as it ships and never adds terrain. When
 the style has terrain, the page visits every waypoint before frame one,
-waits for its tiles, and asks the renderer for the ground under camera and
-target with `queryTerrainElevation`. That works for any DEM source and any
-exaggeration, including one that changes with zoom, because the renderer is
-the only oracle. Altitudes above ground become absolute and never depend on
-which terrain tiles load mid-flight. It then preloads every tile along the path, waits for
-the map to go idle and the network to go quiet, and fades in
-over 300 ms with the camera already moving. Space pauses and resumes from
-the same spot. With `prefers-reduced-motion` the page shows the first frame
-and waits for Space. The one button restarts the flight, records the canvas
-with `MediaRecorder`, and downloads the video when the flight ends. The page
-itself is a short module that reads like a GL JS example; everything hard is
-a function in `assets/flyover.ts`, inlined through an import map.
+waits for its tiles, and reads the ground under camera and target with
+`queryTerrainElevation`. This works with any DEM source and any
+exaggeration, including one that changes with zoom. Altitudes above ground
+become absolute and never depend on which terrain tiles load mid-flight.
+The page then preloads every tile along the path, waits for the map to go
+idle and the network to go quiet, and fades in over 300 ms with the camera
+already moving. Space pauses and resumes from the same spot. With
+`prefers-reduced-motion` the page shows the first frame and waits for
+Space. The one button restarts the flight, records the canvas with
+`MediaRecorder`, and downloads the video when the flight ends. The page is
+a short module. The functions it calls live in `assets/flyover.ts`, inlined
+through an import map.
 
 ## Distances
 

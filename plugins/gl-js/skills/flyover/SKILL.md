@@ -16,8 +16,8 @@ user names another place:
 - `<slug>.html`, built from `assets/template.html` by `scripts/build.ts`.
 
 The page is the map, the camera path, Space to pause, and one button that
-records the flight to a video file. Nothing else. A title card, captions, a
-progress bar, or controls are the user's call: offer them at the end, never
+records the flight to a video file. A title card, captions, a progress bar,
+or controls are for the user to ask for. Offer them at the end and never
 bake them in.
 
 The page carries no token. It reads `access_token` from its URL and asks for
@@ -38,8 +38,7 @@ and terrain is whatever the style renders. The build prints the link.
 
    Geocoding returns wrong hits for small park features. Sanity-check every
    result against the coordinates you already know. Keep the token in the
-   shell variable. The only place its value belongs is the link the build
-   prints.
+   shell variable. Its value belongs only in the link the build prints.
 3. Design the shot and write `<slug>.geojson`. See "Designing the shot".
    When the path already exists as a file, see "Flying an existing path".
 4. Build and read the report:
@@ -52,9 +51,9 @@ and terrain is whatever the style renders. The build prints the link.
    `versions.json`, and prints one line per leg with speed, time, altitude,
    and turn angle, then warnings for hairpins, speed out of proportion to
    altitude, and buildings taller than the camera within 150 m of the path.
-   You cannot watch the result, so this report is your slow-motion check.
-   Fix every warning unless the brief asked for that exact thing, then
-   rebuild. The last line is the link, token included.
+   You cannot watch the result, so read the report instead. Fix every
+   warning unless the brief asked for that exact thing, then rebuild. The
+   last line is the link, token included.
 5. Open the link: `open "<link>"`. If the page stays black, the browser is
    blocking tile workers on `file://`. Serve the folder instead with
    `python3 -m http.server 8765` and use the same query string.
@@ -62,8 +61,8 @@ and terrain is whatever the style renders. The build prints the link.
    and say that editing the GeoJSON and rerunning the build changes the
    flight. Mention that the page's button downloads the flight as a video.
    Offer overlays as the follow-up if they would help. Skip the Artifact
-   tool: the artifact sandbox blocks Mapbox requests, so the page renders
-   black there.
+   tool. Its sandbox blocks Mapbox requests, so the page renders black
+   there.
 
 ## Designing the shot
 
@@ -80,14 +79,14 @@ move reads as a film. A flight that tries three moves reads as a screensaver.
 | Approach | Start far and high, descend toward the subject, `hold` at the end. | An arrival, a hero shot. |
 | Pass-by | Straight line past the subject, `lookAt` fixed on it, so it pans across the frame. | Skylines, waterfronts. |
 
-Spend the boldness in one place. One long bearing sweep, one dive, or one
-climb per flight. Everything around it stays quiet.
+Put one bold move in each flight, such as a long bearing sweep, a dive, or
+a climb. Keep the rest of the flight quiet.
 
 ### Frame one
 
 The viewer watches the first second more than any other. The page fades in
-with the camera already at cruise speed, so the first waypoint carries the
-whole opening:
+with the camera already at cruise speed, so the first waypoint sets the
+opening:
 
 - The subject is in frame and nothing stands between camera and target.
   Start over open ground: water, a park, a plaza, a wide avenue. Over a
@@ -124,35 +123,32 @@ shot than one constant speed.
 
 ### Motion that feels real
 
-These come from the same rules that make interface motion feel right:
-
 - Constant speed inside a leg, ramps only where speed changes or the camera
   stops. The velocity model does this for you. Do not fake it with extra
   waypoints.
-- Nothing pops. The page resolves ground elevation from DEM tiles and
-  preloads every tile on the path before frame one, so a long flight waits a
-  few seconds longer to start and then never stutters. Do not shorten a
-  flight to dodge the wait. The same preload is what makes the recorded
+- Nothing pops. The page reads ground elevation from the style's terrain
+  and preloads every tile on the path before frame one, so a long flight
+  waits a few seconds longer to start and then never stutters. Do not
+  shorten a flight to dodge the wait. The preload also keeps the recorded
   video smooth.
 - Nothing stops dead. A `hold` decelerates over one ramp and accelerates
   out over another. The flight ends with the same deceleration.
 - Ease-out, never ease-in. The flight is at full speed on frame one and
   slows into its ending. A flight that starts slow feels sluggish for its
   whole length.
-- Asymmetry feels alive. A pass-by that climbs while it pans, an orbit that
+- Pair two motions. A pass-by that climbs while it pans, an orbit that
   gains 50 m per quarter turn, an approach that slows as it descends.
 - Match the personality. A night skyline is slow and level. A sports venue
   is fast with sharp ramps. A national park is high, slow, and wide.
-- Reduced motion is respected by the page: it shows frame one and waits for
+- With `prefers-reduced-motion` the page shows frame one and waits for
   Space.
 
 ### Flying an existing path
 
-The user may hand you a GPX, KML, TCX, CSV, or GeoJSON LineString: a hike, a
-ride, a road trip, a race course. The skill has no importer on purpose. The
-waypoint GeoJSON in `references/waypoints.md` is the API; you read the file
-and write that format, so any input the model can read is supported and the
-skill never grows a parser per format.
+The user may hand you a GPX, KML, TCX, CSV, or GeoJSON LineString with a
+hike, a ride, a road trip, or a race course. The skill has no importer. Read
+the file yourself and write the waypoint format from
+`references/waypoints.md`.
 
 - Read the coordinates yourself and note the length. A track has hundreds of
   points; a flight wants 8 to 20 waypoints. Keep the first and the last,
@@ -167,8 +163,8 @@ skill never grows a parser per format.
   trip at 600 to 2000 m.
 - Let speed come from `duration` unless the brief says otherwise. A 40 km
   ride in 45 s reads as a helicopter; a 2 km walk in 45 s reads as a drone.
-- Tracks recorded on the ground hug the ground. Widen hairpins as the
-  report suggests and skip sections that double back.
+- Recorded tracks follow every bend of the road or trail. Widen hairpins
+  as the report suggests and skip sections that double back.
 
 ### Spacing
 
@@ -192,6 +188,6 @@ tilts it down. A target with altitude, such as a tower top at
   three is a slideshow.
 - Editing `template.html` for one flight. Change the GeoJSON. Change the
   template only when every future flyover needs the change.
-- Adding UI. The page has one button by design. Offer more, do not ship it.
+- Adding UI. The page has one button. Offer more, do not ship them.
 - Changing the style or the light preset. The page renders Standard as it
-  ships until the flight format grows a place for mood.
+  ships.

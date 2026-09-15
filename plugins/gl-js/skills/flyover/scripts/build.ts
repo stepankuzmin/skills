@@ -37,7 +37,7 @@ else console.warn(token ? "warn: building check skipped" : "warn: MAPBOX_ACCESS_
 console.log(`\n${pathToFileURL(resolve(output))}${token ? `?access_token=${encodeURIComponent(token)}` : ""}`);
 
 // {{slot}} placeholders. Every slot must be provided and every provided slot
-// must be used, so a renamed placeholder fails loudly instead of shipping.
+// must be used, so a renamed placeholder fails the build.
 function render(template: string, slots: Record<string, string>): string {
   const used = new Set<string>();
   const out = template.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
