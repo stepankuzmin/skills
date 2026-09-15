@@ -63,11 +63,12 @@ asks for one when the URL has none.
 ## Page behavior
 
 The page renders Mapbox Standard as it ships and never adds terrain. When
-the style has terrain, the page fits every waypoint into one view before
-frame one, reads the ground there through `queryTerrainElevation`, and
-applies the style's exaggeration at each waypoint's zoom, so altitudes above
-ground become absolute and never depend on which terrain tiles the renderer
-has loaded mid-flight. It then preloads every tile along the path, waits for
+the style has terrain, the page visits every waypoint before frame one,
+waits for its tiles, and asks the renderer for the ground under camera and
+target with `queryTerrainElevation`. That works for any DEM source and any
+exaggeration, including one that changes with zoom, because the renderer is
+the only oracle. Altitudes above ground become absolute and never depend on
+which terrain tiles load mid-flight. It then preloads every tile along the path, waits for
 the map to go idle and the network to go quiet, and fades in
 over 300 ms with the camera already moving. Space pauses and resumes from
 the same spot. With `prefers-reduced-motion` the page shows the first frame
