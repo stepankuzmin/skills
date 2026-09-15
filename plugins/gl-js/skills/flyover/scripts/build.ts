@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-// usage: node build.ts <flight.geojson> [out.html] [--no-buildings] [key=value ...]
+// usage: node build.ts <flight.geojson> [out.html] [--no-buildings]
 //
 // Renders assets/template.html with the waypoints, the latest stable Mapbox
 // GL JS, and the flyover library. Prints a flight report, then the link to
-// open: the token from MAPBOX_ACCESS_TOKEN and any key=value arguments go in
-// the query string.
+// open with the token from MAPBOX_ACCESS_TOKEN in the query string.
 import { readFileSync, writeFileSync } from "node:fs";
 import { stripTypeScriptTypes } from "node:module";
 import { resolve } from "node:path";
@@ -14,10 +13,8 @@ import { compileFlight, type Flight, type FlightCollection, type Waypoint } from
 process.removeAllListeners("warning"); // stripTypeScriptTypes still prints an ExperimentalWarning
 
 const args = process.argv.slice(2);
-const files = args.filter((a) => !a.startsWith("--") && !a.includes("="));
-const query = new URLSearchParams(args.filter((a) => !a.startsWith("--") && a.includes("=")).join("&"));
-const [input, output = input?.replace(/\.geojson$/, "") + ".html"] = files;
-if (!input) fail("usage: build.ts <flight.geojson> [out.html] [--no-buildings] [key=value ...]");
+const [input, output = input?.replace(/\.geojson$/, "") + ".html"] = args.filter((a) => !a.startsWith("--"));
+if (!input) fail("usage: build.ts <flight.geojson> [out.html] [--no-buildings]");
 
 const token = process.env.MAPBOX_ACCESS_TOKEN;
 const flight = validate(JSON.parse(readFileSync(input, "utf8")));
@@ -33,13 +30,11 @@ const html = render(asset("template.html"), {
 });
 writeFileSync(output, html);
 
-const compiled = await compileFlight(flight);
-report(compiled);
+report(compileFlight(flight));
 if (token && !args.includes("--no-buildings")) await checkBuildings(token);
 else console.warn(token ? "warn: building check skipped" : "warn: MAPBOX_ACCESS_TOKEN is not set; the page will ask for a token and the building check is skipped");
 
-if (token) query.set("access_token", token);
-console.log(`\n${pathToFileURL(resolve(output))}${query.size ? `?${query}` : ""}`);
+console.log(`\n${pathToFileURL(resolve(output))}${token ? `?access_token=${encodeURIComponent(token)}` : ""}`);
 
 // {{slot}} placeholders. Every slot must be provided and every provided slot
 // must be used, so a renamed placeholder fails loudly instead of shipping.
@@ -143,11 +138,6 @@ function validate(fc: any): FlightCollection {
   if (props.duration !== undefined && (typeof props.duration !== "number" || props.duration <= 0)) fail("properties.duration must be milliseconds > 0");
   if (props.speed !== undefined && (typeof props.speed !== "number" || props.speed <= 0)) fail("properties.speed must be m/s > 0");
   if (props.ramp !== undefined && (typeof props.ramp !== "number" || props.ramp < 0)) fail("properties.ramp must be milliseconds >= 0");
-  for (const key of ["style", "lightPreset", "theme"]) {
-    if (props[key] === undefined) continue;
-    console.warn(`warn: properties.${key} dropped; pass ${key}=${props[key]} to the build and it goes in the link`);
-    delete props[key];
-  }
   return { type: "FeatureCollection", properties: props, features: points };
 }
 

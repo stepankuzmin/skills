@@ -20,16 +20,15 @@ body { margin: 0; background: #000; }
 <!-- assets/flyover.ts with types stripped, so the module below can import it -->
 <script type="importmap">{ "imports": { "flyover": "data:text/javascript;base64,{{library}}" } }</script>
 <script type="module">
-import { compileFlight, groundElevation, configureBasemap, preload, play, record } from "flyover";
+import { compileOnTerrain, preload, play, record } from "flyover";
 
 const waypoints = {{waypoints}};
 
-const params = new URLSearchParams(location.search);
-mapboxgl.accessToken = params.get("access_token") ?? prompt("Mapbox access token");
+mapboxgl.accessToken = new URLSearchParams(location.search).get("access_token") ?? prompt("Mapbox access token");
 
 const map = new mapboxgl.Map({
     container: "map",
-    style: params.get("style") ?? "mapbox://styles/mapbox/standard",
+    style: "mapbox://styles/mapbox/standard",
     center: waypoints.features[0].geometry.coordinates,
     zoom: 14,
     interactive: false,
@@ -37,14 +36,8 @@ const map = new mapboxgl.Map({
     preserveDrawingBuffer: true
 });
 
-map.on("style.load", () => {
-    configureBasemap(map, params);
-    map.addSource("dem", { type: "raster-dem", url: "mapbox://mapbox.mapbox-terrain-dem-v1" });
-    map.setTerrain({ source: "dem" });
-});
-
 map.on("load", async () => {
-    const flight = await compileFlight(waypoints, groundElevation(mapboxgl.accessToken));
+    const flight = await compileOnTerrain(map, waypoints);
     await preload(map, flight);
 
     const player = play(map, flight);

@@ -1,6 +1,6 @@
 // Everything a generated flyover page needs. The first half is pure math
-// shared with the build report; the second half touches the map, the
-// network, and the clock. Imports cleanly in Node: nothing runs at load.
+// shared with the build report; the second half touches the map and the
+// clock. Imports cleanly in Node: nothing runs at load.
 
 declare const mapboxgl: any;
 
@@ -47,6 +47,7 @@ export interface Flight {
   options: FlightOptions;
   plan: Plan;
   samples: Sample[];
+  bounds: [LngLat, LngLat]; // every waypoint and target
 }
 
 type Vec3 = [number, number, number]; // mercator x, mercator y, meters
@@ -66,34 +67,38 @@ export function lngLatOf([x, y]: [number, number]): LngLat {
 
 const metersPerUnit = (lat: number) => EARTH * Math.cos(lat * rad);
 
-// groundAt returns ground elevation in meters, so altitudes above ground
-// become absolute. The build passes nothing and reports altitudes as given.
-export async function compileFlight(
-  fc: FlightCollection,
-  groundAt: (p: LngLat) => Promise<number> | number = () => 0,
-): Promise<Flight> {
+// groundAt returns the ground elevation in meters at a point belonging to
+// waypoint i, so altitudes above ground become absolute. The build passes
+// nothing and reports altitudes as given.
+export function compileFlight(fc: FlightCollection, groundAt: (p: LngLat, i: number) => number = () => 0): Flight {
   const options: FlightOptions = { ...defaults, ...fc.properties };
   const points = fc.features.filter((f) => f.geometry.type === "Point");
   const meanLat = points.reduce((a, f) => a + f.geometry.coordinates[1], 0) / points.length;
   const scale = metersPerUnit(meanLat);
+  const bounds: [LngLat, LngLat] = [[Infinity, Infinity], [-Infinity, -Infinity]];
+  const extend = ([lng, lat]: LngLat) => {
+    bounds[0] = [Math.min(bounds[0][0], lng), Math.min(bounds[0][1], lat)];
+    bounds[1] = [Math.max(bounds[1][0], lng), Math.max(bounds[1][1], lat)];
+  };
 
-  const nodes = await Promise.all(points.map(async (f, i) => {
+  const nodes = points.map((f, i) => {
     const [lng, lat, agl = 100] = f.geometry.coordinates;
     const p = f.properties ?? {};
     const here: LngLat = [lng, lat];
     const lookLngLat: LngLat = p.lookAt ? [p.lookAt[0], p.lookAt[1]] : ahead(points, i, agl * 3, scale);
-    const [ground, lookGround] = await Promise.all([groundAt(here), groundAt(lookLngLat)]);
+    extend(here);
+    extend(lookLngLat);
     return {
-      pos: [...mercator(here), Math.max(agl, options.minAltitude) + ground] as Vec3,
-      look: [...mercator(lookLngLat), (p.lookAt?.[2] ?? 0) + lookGround] as Vec3,
+      pos: [...mercator(here), Math.max(agl, options.minAltitude) + groundAt(here, i)] as Vec3,
+      look: [...mercator(lookLngLat), (p.lookAt?.[2] ?? 0) + groundAt(lookLngLat, i)] as Vec3,
       hold: p.hold ?? 0,
       speed: p.speed,
     };
-  }));
+  });
 
   const samples = samplePath(nodes, scale);
   const plan = planFlight(nodes.map((n, i) => ({ d: samples[i * SAMPLES].d, hold: n.hold, speed: n.speed })), options);
-  return { options, plan, samples };
+  return { options, plan, samples, bounds };
 }
 
 export function poseAt(flight: Flight, time: number): Pose {
@@ -188,6 +193,7 @@ type Phase =
 
 export interface Plan {
   phases: Phase[];
+  waypointTimes: number[]; // ms at which the camera reaches each waypoint
   total: number; // ms
   cruise: number; // m/s
   distance: number; // meters
@@ -235,8 +241,10 @@ export function planFlight(nodes: PlanNode[], opts: { duration: number; speed?: 
   }
 
   const phases: Phase[] = [];
+  const waypointTimes: number[] = [];
   let clock = 0;
   for (let i = 0; i < n; i++) {
+    waypointTimes.push(clock);
     if (nodes[i].hold > 0) {
       phases.push({ type: "hold", start: clock, end: clock + nodes[i].hold, d: nodes[i].d });
       clock += nodes[i].hold;
@@ -246,7 +254,7 @@ export function planFlight(nodes: PlanNode[], opts: { duration: number; speed?: 
       clock += legs[i].T;
     }
   }
-  return { phases, total: clock, cruise, distance };
+  return { phases, waypointTimes, total: clock, cruise, distance };
 }
 
 // Meters along the path at `time` ms into the flight.
@@ -263,49 +271,43 @@ export function distanceAt(plan: Plan, time: number): number {
   return p.from + dA + (vc * (T - ta - td)) / 1000 + (vc * tau + (ve - vc) * td * S(tau / td)) / 1000;
 }
 
-// Ground elevation from Mapbox DEM tiles, decoded here so altitudes are
-// absolute before frame one instead of following whichever terrain tiles the
-// renderer has loaded. Returns 0 when a tile cannot be fetched.
-export function groundElevation(token: string, zoom = 13) {
-  const tiles = new Map<string, Promise<{ ctx: CanvasRenderingContext2D; size: number } | null>>();
-  return async ([lng, lat]: LngLat): Promise<number> => {
-    const n = 2 ** zoom;
-    const [x, y] = mercator([lng, lat]).map((v) => v * n);
-    const tx = Math.floor(x);
-    const ty = Math.floor(y);
-    const key = `${tx}/${ty}`;
-    if (!tiles.has(key)) {
-      tiles.set(key, fetch(`https://api.mapbox.com/v4/mapbox.mapbox-terrain-dem-v1/${zoom}/${tx}/${ty}.pngraw?access_token=${token}`)
-        .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
-        .then(createImageBitmap)
-        .then((bmp) => {
-          const canvas = document.createElement("canvas");
-          canvas.width = canvas.height = bmp.width;
-          const ctx = canvas.getContext("2d")!;
-          ctx.drawImage(bmp, 0, 0);
-          return { ctx, size: bmp.width };
-        })
-        .catch(() => null));
-    }
-    const tile = await tiles.get(key);
-    if (!tile) return 0;
-    const [r, g, b] = tile.ctx.getImageData(Math.floor((x - tx) * tile.size), Math.floor((y - ty) * tile.size), 1, 1).data;
-    return Math.max(0, -10000 + (r * 65536 + g * 256 + b) * 0.1);
-  };
+// Compiles the flight against the terrain the style renders. Every waypoint
+// and target is fitted into one top-down view so their terrain tiles load,
+// raw elevation is read through queryTerrainElevation, and the style's
+// exaggeration is applied at the zoom the camera has at that waypoint. A
+// style without terrain gives ground 0. The fit stops at zoom 12 because
+// Standard turns terrain off above zoom 13.7 and the query returns null then.
+export async function compileOnTerrain(map: any, fc: FlightCollection): Promise<Flight> {
+  const terrain = map.getTerrain();
+  if (!terrain) return compileFlight(fc);
+  const flat = compileFlight(fc);
+  const zooms = flat.plan.waypointTimes.map((t) => {
+    setCamera(map, poseAt(flat, t));
+    return map.getZoom();
+  });
+  map.fitBounds(flat.bounds, { padding: 64, pitch: 0, bearing: 0, maxZoom: 12, duration: 0 });
+  await idle(map);
+  const exaggeration = exaggerationAt(terrain.exaggeration);
+  return compileFlight(fc, (p, i) => (map.queryTerrainElevation(p, { exaggerated: false }) ?? 0) * exaggeration(zooms[i]));
 }
 
-// Standard style config from the page URL: every query parameter except the
-// reserved ones becomes a basemap property, so ?lightPreset=dusk works.
-export function configureBasemap(map: any, params: URLSearchParams) {
-  for (const [key, value] of params) {
-    if (key === "access_token" || key === "style") continue;
-    const parsed = value === "true" ? true : value === "false" ? false : value !== "" && !Number.isNaN(Number(value)) ? Number(value) : value;
-    try {
-      map.setConfigProperty("basemap", key, parsed);
-    } catch (e) {
-      console.warn(`basemap ${key}:`, e);
-    }
+// The style's terrain exaggeration as a function of zoom: a number, or the
+// linear zoom interpolation Standard uses. Anything else counts as 1.
+function exaggerationAt(spec: unknown): (zoom: number) => number {
+  if (spec === undefined) return () => 1;
+  if (typeof spec === "number") return () => spec;
+  if (Array.isArray(spec) && spec[0] === "interpolate" && spec[1]?.[0] === "linear" && spec[2]?.[0] === "zoom") {
+    const stops: number[] = spec.slice(3);
+    return (zoom) => {
+      if (zoom <= stops[0]) return stops[1];
+      for (let k = 2; k < stops.length; k += 2) {
+        if (zoom <= stops[k]) return stops[k - 1] + ((stops[k + 1] - stops[k - 1]) * (zoom - stops[k - 2])) / (stops[k] - stops[k - 2]);
+      }
+      return stops[stops.length - 1];
+    };
   }
+  console.warn("terrain exaggeration not understood, using 1:", spec);
+  return () => 1;
 }
 
 export function setCamera(map: any, pose: Pose) {
