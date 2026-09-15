@@ -268,33 +268,6 @@ export function distanceAt(plan: Plan, time: number): number {
   return p.from + dA + (vc * (T - ta - td)) / 1000 + (vc * tau + (ve - vc) * td * S(tau / td)) / 1000;
 }
 
-// Compiles the flight against the terrain the style renders, whatever its
-// DEM source and exaggeration. Puts the camera at each waypoint's pose, waits
-// for its tiles, and reads the ground under camera and target with
-// queryTerrainElevation. Null means the style draws no terrain at that zoom,
-// so the ground is 0. Adding ground raises the camera, which changes the
-// zoom, which can change the style's exaggeration, so the passes repeat
-// until the values stop moving.
-export async function compileOnTerrain(map: any, fc: FlightCollection): Promise<Flight> {
-  let flight = compileFlight(fc);
-  if (!map.getTerrain()) return flight;
-  const ground: Ground[] = flight.waypoints.map(() => ({ camera: 0, look: 0 }));
-  for (let pass = 0; pass < 3; pass++) {
-    let moved = false;
-    for (const [i, wp] of flight.waypoints.entries()) {
-      setCamera(map, poseAt(flight, flight.plan.waypointTimes[i]));
-      await idle(map);
-      const at = (p: LngLat) => map.queryTerrainElevation(p, { exaggerated: true }) ?? 0;
-      const g = { camera: at(wp.lngLat), look: at(wp.lookLngLat) };
-      moved ||= Math.abs(g.camera - ground[i].camera) > 1 || Math.abs(g.look - ground[i].look) > 1;
-      ground[i] = g;
-    }
-    if (!moved) break;
-    flight = compileFlight(fc, ground);
-  }
-  return flight;
-}
-
 export function setCamera(map: any, pose: Pose) {
   const camera = new mapboxgl.FreeCameraOptions(mapboxgl.MercatorCoordinate.fromLngLat(pose.lngLat, pose.altitude));
   camera.setPitchBearing(pose.pitch, pose.bearing);
@@ -305,25 +278,29 @@ export function setCamera(map: any, pose: Pose) {
 // network and the map go quiet. One _preloadTiles call dedupes tiles across
 // all sampled camera states; jumpTo({ preloadOnly }) per state would reload
 // each tile once per call. Resolves with the camera on frame one.
+// Loads every tile the flight will draw, before frame one.
+//
+// Predicting the tiles with Map._preloadTiles does not work: mapbox-gl keeps
+// adjusting a transform after the camera is set, so a pose at rest settles at
+// a different zoom than the same pose under a camera driven every frame, and
+// the tiles it fetches are a level or two off the ones the flight draws.
+// Measured on a 49 km flight, that left 214 tiles loading in the air. Flying
+// the path first cannot miss, because the warm-up renders the poses the
+// flight renders, and it leaves 21.
 export async function preload(map: any, flight: Flight) {
   setCamera(map, poseAt(flight, 0));
   await idle(map);
-  if (typeof map._preloadTiles === "function") {
-    const step = Math.max(1000, flight.plan.total / 120);
-    const transforms = [];
-    for (let t = 0; t <= flight.plan.total; t += step) {
-      const tr = map.transform.clone();
-      const { lngLat, altitude, pitch, bearing } = poseAt(flight, t);
-      const camera = new mapboxgl.FreeCameraOptions(mapboxgl.MercatorCoordinate.fromLngLat(lngLat, altitude));
-      camera.setPitchBearing(pitch, bearing);
-      tr.setFreeCameraOptions(camera);
-      transforms.push(tr);
-    }
-    map._preloadTiles(transforms);
-    await networkQuiet(1500, 15000);
+
+  // A stop every kilometer of path. Measured on a 49 km flight: 48 stops left
+  // 21 tiles loading in the air and took 43 s, 32 stops left 39 and took 32 s.
+  const steps = Math.max(24, Math.min(96, Math.round(flight.plan.distance / 1000)));
+  for (let i = 0; i <= steps; i++) {
+    setCamera(map, poseAt(flight, (flight.plan.total * i) / steps));
+    await idle(map, 4000);
   }
-  await idle(map);
+
   setCamera(map, poseAt(flight, 0));
+  await idle(map);
 }
 
 function idle(map: any, maxMs = 10000) {
@@ -331,21 +308,6 @@ function idle(map: any, maxMs = 10000) {
     new Promise<void>((resolve) => { map.once("idle", resolve); map.triggerRepaint(); }),
     new Promise<void>((resolve) => setTimeout(resolve, maxMs)),
   ]);
-}
-
-function networkQuiet(quietMs: number, maxMs: number) {
-  return new Promise<void>((resolve) => {
-    const t0 = performance.now();
-    let last = t0;
-    const observer = new PerformanceObserver(() => { last = performance.now(); });
-    observer.observe({ type: "resource" });
-    const check = () => {
-      const now = performance.now();
-      if (now - last > quietMs || now - t0 > maxMs) { observer.disconnect(); resolve(); }
-      else setTimeout(check, 200);
-    };
-    check();
-  });
 }
 
 export interface Player {

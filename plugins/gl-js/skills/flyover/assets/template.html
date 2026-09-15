@@ -7,24 +7,46 @@
 <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v{{version}}/mapbox-gl.css">
 <script src="https://api.mapbox.com/mapbox-gl-js/v{{version}}/mapbox-gl.js"></script>
 <style>
-body { margin: 0; background: #000; }
+html, body { margin: 0; height: 100%; background: #000; }
+/* The frame is laid out at a fixed size and scaled to the window, so the
+   camera reaches the zoom the build computed and the video is that size. */
+#stage { position: fixed; inset: 0; overflow: hidden; }
+/* Centered by translate rather than by centering an oversized box, which grid
+   clamps to the top edge once the frame is taller than the window. */
+#frame { position: absolute; left: 50%; top: 50%; width: {{frameWidth}}px; height: {{frameHeight}}px; }
 #map { position: absolute; inset: 0; opacity: 0; transition: opacity 300ms; }
 #download { position: absolute; top: 12px; right: 12px; }
 </style>
 </head>
 
 <body>
-<div id="map"></div>
-<button id="download" hidden>Download video</button>
+<div id="stage"><div id="frame"><div id="map"></div><button id="download" hidden>Download video</button></div></div>
 
 <!-- assets/flyover.ts with types stripped, so the module below can import it -->
 <script type="importmap">{ "imports": { "flyover": "data:text/javascript;base64,{{library}}" } }</script>
 <script type="module">
-import { compileOnTerrain, preload, play, record } from "flyover";
+import { compileFlight, preload, play, record } from "flyover";
 
 const waypoints = {{waypoints}};
+// Ground under each waypoint's camera and target, read from the style's DEM at
+// build time. Altitudes in the flight are above ground; these make them absolute.
+const ground = {{ground}};
 
-mapboxgl.accessToken = new URLSearchParams(location.search).get("access_token") ?? prompt("Mapbox access token");
+// A prompted token goes into the URL, so a reload and a shared link keep it.
+const params = new URLSearchParams(location.search);
+if (!params.get("access_token")) {
+    params.set("access_token", prompt("Mapbox access token") ?? "");
+    location.replace(`${location.pathname}?${params}`);
+}
+mapboxgl.accessToken = params.get("access_token");
+
+const frame = document.getElementById("frame");
+const fit = () => {
+    const scale = Math.min(innerWidth / frame.offsetWidth, innerHeight / frame.offsetHeight);
+    frame.style.transform = `translate(-50%, -50%) scale(${scale})`;
+};
+fit();
+addEventListener("resize", fit);
 
 const map = new mapboxgl.Map({
     container: "map",
@@ -33,11 +55,15 @@ const map = new mapboxgl.Map({
     zoom: 14,
     interactive: false,
     maxPitch: 85,
+    // The tile cache is sized for one viewport, so a long flight evicts what
+    // it preloaded before it gets there and reloads it in the air. This is a
+    // cap, not an allocation: it holds what the flight loads, nothing more.
+    minTileCacheSize: 1000,
     preserveDrawingBuffer: true
 });
 
 map.on("load", async () => {
-    const flight = await compileOnTerrain(map, waypoints);
+    const flight = compileFlight(waypoints, ground);
     await preload(map, flight);
 
     const player = play(map, flight);
