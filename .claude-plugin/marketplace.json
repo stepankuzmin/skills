@@ -9,6 +9,11 @@
       "name": "complexity",
       "source": "./plugins/complexity",
       "description": "Grug agent and grug-review skill: clarity-first code review."
+    },
+    {
+      "name": "gl-js",
+      "source": "./plugins/gl-js",
+      "description": "Mapbox GL JS skills: cinematic flyovers from a text description."
     }
   ]
 }
