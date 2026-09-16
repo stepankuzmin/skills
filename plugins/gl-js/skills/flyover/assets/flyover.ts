@@ -67,6 +67,17 @@ export function lngLatOf([x, y]: [number, number]): LngLat {
   return [x * 360 - 180, (Math.atan(Math.exp((180 - y * 360) * rad)) / rad) * 2 - 90];
 }
 
+const wrapLng = (lng: number) => ((((lng + 180) % 360) + 360) % 360) - 180;
+
+// Longitudes on one continuous world copy. A leg from 179.9 to -179.9 is 22 km
+// across the date line, and mercator x has to run past 1 to say so instead of
+// sliding back through Greenwich.
+function unwrapLngs(lngs: number[]): number[] {
+  const out = [lngs[0]];
+  for (let i = 1; i < lngs.length; i++) out.push(out[i - 1] + wrapLng(lngs[i] - out[i - 1]));
+  return out;
+}
+
 const metersPerUnit = (lat: number) => EARTH * Math.cos(lat * rad);
 
 // ground[i] is the ground elevation under waypoint i's camera and target, so
@@ -78,11 +89,18 @@ export function compileFlight(fc: FlightCollection, ground: Ground[] = []): Flig
   const meanLat = points.reduce((a, f) => a + f.geometry.coordinates[1], 0) / points.length;
   const scale = metersPerUnit(meanLat);
 
+  // Everything from here to the pose is on one world copy, so the spline never
+  // crosses the antimeridian. poseAt wraps the longitude back on the way out.
+  const lngs = unwrapLngs(points.map((f) => f.geometry.coordinates[0]));
+  const path: LngLat[] = points.map((f, i) => [lngs[i], f.geometry.coordinates[1]]);
+
   const nodes = points.map((f, i) => {
-    const [lng, lat, agl = 100] = f.geometry.coordinates;
+    const agl = f.geometry.coordinates[2] ?? 100;
     const p = f.properties ?? {};
-    const lngLat: LngLat = [lng, lat];
-    const lookLngLat: LngLat = p.lookAt ? [p.lookAt[0], p.lookAt[1]] : ahead(points, i, agl * 3, scale);
+    const lngLat = path[i];
+    const lookLngLat: LngLat = p.lookAt
+      ? [lngs[i] + wrapLng(p.lookAt[0] - lngs[i]), p.lookAt[1]]
+      : ahead(path, i, agl * 3, scale);
     return {
       lngLat,
       lookLngLat,
@@ -95,12 +113,17 @@ export function compileFlight(fc: FlightCollection, ground: Ground[] = []): Flig
 
   const samples = samplePath(nodes, scale);
   const plan = planFlight(nodes.map((n, i) => ({ d: samples[i * SAMPLES].d, hold: n.hold, speed: n.speed })), options);
-  return { options, plan, samples, waypoints: nodes.map(({ lngLat, lookLngLat }) => ({ lngLat, lookLngLat })) };
+  const waypoints = nodes.map(({ lngLat, lookLngLat }) => ({
+    lngLat: [wrapLng(lngLat[0]), lngLat[1]] as LngLat,
+    lookLngLat: [wrapLng(lookLngLat[0]), lookLngLat[1]] as LngLat,
+  }));
+  return { options, plan, samples, waypoints };
 }
 
 export function poseAt(flight: Flight, time: number): Pose {
   const { pos, look } = sampleAt(flight.samples, distanceAt(flight.plan, time));
-  const lngLat = lngLatOf([pos[0], pos[1]]);
+  const [lng, lat] = lngLatOf([pos[0], pos[1]]);
+  const lngLat: LngLat = [wrapLng(lng), lat];
   const dx = look[0] - pos[0];
   const dy = look[1] - pos[1];
   const dz = (look[2] - pos[2]) / metersPerUnit(lngLat[1]);
@@ -114,8 +137,8 @@ export function poseAt(flight: Flight, time: number): Pose {
 
 // A point `meters` ahead of waypoint i along the direction from its
 // neighbors, so a waypoint without lookAt reads as a forward-facing drone.
-function ahead(points: Waypoint[], i: number, meters: number, scale: number): LngLat {
-  const at = (k: number) => mercator(points[Math.max(0, Math.min(points.length - 1, k))].geometry.coordinates as unknown as LngLat);
+function ahead(path: LngLat[], i: number, meters: number, scale: number): LngLat {
+  const at = (k: number) => mercator(path[Math.max(0, Math.min(path.length - 1, k))]);
   const [hx, hy] = at(i);
   const [ax, ay] = at(i - 1);
   const [bx, by] = at(i + 1);
@@ -134,6 +157,12 @@ function catmullRom(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
     (-p0[i] + 3 * p1[i] - 3 * p2[i] + p3[i]) * t3)) as Vec3;
 }
 
+// Meters between two path points. The third component is already meters, and a
+// climb over one spot is real travel: leave it out and the leg measures zero,
+// which gives the plan a zero cruise speed and a NaN duration.
+const span = (a: Vec3, b: Vec3, scale: number) =>
+  Math.hypot((b[0] - a[0]) * scale, (b[1] - a[1]) * scale, b[2] - a[2]);
+
 function samplePath(nodes: { pos: Vec3; look: Vec3 }[], scale: number): Sample[] {
   const n = (i: number) => nodes[Math.max(0, Math.min(nodes.length - 1, i))];
   const samples: Sample[] = [];
@@ -144,13 +173,13 @@ function samplePath(nodes: { pos: Vec3; look: Vec3 }[], scale: number): Sample[]
       const pos = catmullRom(n(s - 1).pos, n(s).pos, n(s + 1).pos, n(s + 2).pos, t);
       const look = catmullRom(n(s - 1).look, n(s).look, n(s + 1).look, n(s + 2).look, t);
       const prev = samples.at(-1);
-      if (prev) d += Math.hypot(pos[0] - prev.pos[0], pos[1] - prev.pos[1]) * scale;
+      if (prev) d += span(prev.pos, pos, scale);
       samples.push({ pos, look, d });
     }
   }
   const last = nodes[nodes.length - 1];
   const prev = samples[samples.length - 1];
-  d += Math.hypot(last.pos[0] - prev.pos[0], last.pos[1] - prev.pos[1]) * scale;
+  d += span(prev.pos, last.pos, scale);
   samples.push({ pos: last.pos, look: last.look, d });
   return samples;
 }

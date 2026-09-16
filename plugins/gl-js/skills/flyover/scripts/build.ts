@@ -20,6 +20,7 @@ const FRAME = { width: 1280, height: 720, fov: 36.87 };
 const STYLE = "mapbox://styles/mapbox/standard";
 const CIRCUMFERENCE = 40075016.686;
 const rad = Math.PI / 180;
+const wrapLng = (lng: number) => ((((lng + 180) % 360) + 360) % 360) - 180;
 
 const args = process.argv.slice(2);
 const [input, output = input?.replace(/\.geojson$/, "") + ".html"] = args.filter((a) => !a.startsWith("--"));
@@ -261,7 +262,8 @@ async function checkBuildings(token: string) {
   const spots = coords.map((c, i) => ({ label: `waypoint ${i + 1}`, lng: c[0], lat: c[1], alt: c[2] }));
   for (let i = 0; i < coords.length - 1; i++) {
     const [a, b] = [coords[i], coords[i + 1]];
-    spots.push({ label: `between waypoints ${i + 1} and ${i + 2}`, lng: (a[0] + b[0]) / 2, lat: (a[1] + b[1]) / 2, alt: (a[2] + b[2]) / 2 });
+    const midLng = wrapLng(a[0] + wrapLng(b[0] - a[0]) / 2); // averaging raw lngs puts a date-line midpoint on Greenwich
+    spots.push({ label: `between waypoints ${i + 1} and ${i + 2}`, lng: midLng, lat: (a[1] + b[1]) / 2, alt: (a[2] + b[2]) / 2 });
   }
   const heights = await Promise.all(spots.map(async ({ lng, lat }) => {
     const url = `https://api.mapbox.com/v4/mapbox.mapbox-streets-v8/tilequery/${lng.toFixed(6)},${lat.toFixed(6)}.json?radius=150&limit=50&layers=building&access_token=${token}`;
