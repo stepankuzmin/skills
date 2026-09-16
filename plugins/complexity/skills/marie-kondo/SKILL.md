@@ -22,8 +22,10 @@ authority, weakening a deep module, or changing effects, recovery, or lifecycle
 behavior. Future flexibility is not a current requirement.
 
 Remove a compatibility path or option only when no current caller or supported
-external contract uses it. Remove wrappers that hide no work, duplicate policy,
-and tests that duplicate existing coverage.
+external contract uses it. Remove wrappers that hide no work, names for
+single-use values, layers that only rename what they wrap, duplicate policy,
+and tests that duplicate existing coverage. Pull a file with one caller back
+into that caller.
 
 Remove comments and explanatory docstrings in scope. Use clear names and
 structure instead.

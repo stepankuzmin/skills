@@ -29,6 +29,9 @@ one authority for each decision.
 Three real callers or a trust boundary may justify sharing. They do not prove
 it.
 
+Keep new code in the file that uses it. Every read pays for the jump between
+files, so a caller elsewhere has to earn the split.
+
 Change the code that owns the behavior. Delete superseded code. Leave unrelated
 code alone.
 
@@ -45,9 +48,17 @@ Audit every changed line and added file, type, helper, dependency, option,
 branch, error handler, test, and comment. Ask what current requirement breaks
 if it is removed. Remove it when the answer is nothing or future flexibility.
 
-Inline trivial single-use code when the caller becomes clearer. Write
-self-explanatory code without comments or explanatory docstrings. Use clear
-names and structure.
+Inline trivial single-use code when the caller becomes clearer. Inline
+indirection that hides no work:
+
+- a name for a value used once
+- a factory that only builds a value the type already describes
+- a layer that only renames what it wraps
+- data that exists only to produce a fixed list of literals
+- state read above the code that uses it, then passed down
+
+Write self-explanatory code without comments or explanatory docstrings. Use
+clear names and structure.
 
 ## Check and report
 
