@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "complexity",
-      "description": "Grug agent and grug-review skill: clarity-first code review.",
+      "description": "Grug agent and skills for clarity-first review, design, refactoring, and architectural replacement.",
       "source": {
         "source": "local",
         "path": "./plugins/complexity"

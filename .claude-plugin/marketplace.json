@@ -8,7 +8,7 @@
     {
       "name": "complexity",
       "source": "./plugins/complexity",
-      "description": "Grug agent and grug-review skill: clarity-first code review."
+      "description": "Grug agent and skills for clarity-first review, design, refactoring, and architectural replacement."
     },
     {
       "name": "gl-js",
