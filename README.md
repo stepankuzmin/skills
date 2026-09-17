@@ -55,6 +55,26 @@ codex plugin marketplace add stepankuzmin/skills
 codex plugin add gl-js@stepankuzmin
 ```
 
+## Marketplace
+
+| Skill | Description |
+| --- | --- |
+| [`vendor-skill`](plugins/marketplace/skills/vendor-skill/SKILL.md) | Vendor an external skill into this marketplace as a first-class plugin, or refresh one already vendored. |
+
+Claude Code plugin:
+
+```bash
+claude plugin marketplace add stepankuzmin/skills
+claude plugin install marketplace@stepankuzmin
+```
+
+Codex plugin:
+
+```bash
+codex plugin marketplace add stepankuzmin/skills
+codex plugin add marketplace@stepankuzmin
+```
+
 ## Recommendations
 
 | Skill | Description |

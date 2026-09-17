@@ -29,6 +29,19 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "marketplace",
+      "description": "Vendor external skills into this marketplace as first-class plugins.",
+      "source": {
+        "source": "local",
+        "path": "./plugins/marketplace"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
     }
   ]
 }
