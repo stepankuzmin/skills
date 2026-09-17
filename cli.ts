@@ -145,27 +145,40 @@ function usage(): never {
   process.exit(1);
 }
 
+// Nothing stops two plugins from vendoring the same skill name, so a name can
+// match more than one entry.
+function matching(name: string): { plugin: string; name: string; source: string }[] {
+  const matches = vendored().filter((entry) => entry.name === name);
+  if (matches.length === 0) throw new Error(`${name} is not vendored by any plugin`);
+  return matches;
+}
+
 function add([source, name, plugin]: string[]): void {
   if (!source || !name || !plugin) usage();
   if (!existsSync(join(PLUGINS, plugin))) throw new Error(`no such plugin: ${plugin}`);
+  // Fetching is a clean sync, so an unclaimed directory here is a first-party
+  // skill this would replace and the lockfile would then claim.
+  const claimed = vendored().some((entry) => entry.plugin === plugin && entry.name === name);
+  if (!claimed && existsSync(join(PLUGINS, plugin, "skills", name))) {
+    throw new Error(`plugins/${plugin}/skills/${name} already exists and is not vendored`);
+  }
   fetchSkill(plugin, source, name);
 }
 
 function remove([name]: string[]): void {
   if (!name) usage();
-  const skill = vendored().find((entry) => entry.name === name);
-  if (!skill) throw new Error(`${name} is not vendored by any plugin`);
+  const matches = matching(name);
+  if (matches.length > 1) {
+    const plugins = matches.map((entry) => entry.plugin).join(" and ");
+    throw new Error(`${name} is vendored by ${plugins}; delete the one you mean from its plugin's skills/ and ${LOCK_FILE}`);
+  }
+  const [skill] = matches;
   skills(skill.plugin, ["remove", name]);
   console.log(`removed plugins/${skill.plugin}/skills/${name}`);
 }
 
 function update(names: string[]): void {
-  const all = vendored();
-  const targets = names.length === 0 ? all : names.map((name) => {
-    const skill = all.find((entry) => entry.name === name);
-    if (!skill) throw new Error(`${name} is not vendored by any plugin`);
-    return skill;
-  });
+  const targets = names.length === 0 ? vendored() : names.flatMap(matching);
   if (targets.length === 0) {
     console.log(`No plugin has a ${LOCK_FILE}. Nothing is vendored.`);
     return;

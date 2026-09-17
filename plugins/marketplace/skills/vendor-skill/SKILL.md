@@ -28,12 +28,10 @@ List what the repo ships:
 npx --yes skills@latest add <owner>/<repo> --list
 ```
 
-Check the source repo's license permits redistribution before vendoring, and
-copy any upstream `LICENSE`/`NOTICE` file and attribution
-alongside the vendored skill — even one stored at the source repo root rather
-than inside the skill directory — so the original terms travel with the code
-(this repo's own MIT `LICENSE:12` requires the same for anything copied from
-it).
+Check the source repo's license permits redistribution before vendoring. Note
+any `LICENSE`/`NOTICE` file it requires you to carry, including one at the
+source repo root rather than inside the skill directory (this repo's own MIT
+`LICENSE:12` requires the same for anything copied from it).
 
 ## Place it in a plugin
 
@@ -52,12 +50,15 @@ It pins upstream's current commit and writes
 Commit the lockfile; read its `ref` for the `README.md` attribution link.
 
 Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
-`scripts/`), and add any upstream `LICENSE`/`NOTICE` file gathered above next
-to it. Only rewrite the frontmatter `description` if it doesn't already say
-when to use the skill — this repo's
-skill frontmatter carries only `name` and `description`, so don't invent
-extra fields to record provenance. Attribution goes in the `README.md` skill
-row instead: link the source repo at the commit you vendored.
+`scripts/`). Copy any upstream `LICENSE`/`NOTICE` to
+`plugins/<plugin>/LICENSE-<skill>`, outside `skills/<skill>/`, because `update`
+wipes that directory and would drop a notice you are still required to carry.
+
+Only rewrite the frontmatter `description` if it doesn't already say when to
+use the skill — this repo's skill frontmatter carries only `name` and
+`description`, so don't invent extra fields to record provenance. Attribution
+goes in the `README.md` skill row instead: link the source repo at the commit
+you vendored.
 
 For an existing plugin, update its catalog metadata so the vendored skill is
 discoverable and accurately described — it's easy to copy the directory and
@@ -105,11 +106,12 @@ git diff
 Omit the skill name to refetch every vendored skill. Each one moves to
 upstream's current commit and the lockfile `ref` is re-pinned to it.
 
-The refetch is a clean sync, not a merge: it reverts local edits, restores
-deleted files, and removes files upstream dropped, so `git diff` is exactly
-what upstream changed. Local adaptations do not survive it — reapply them on
-top, or don't make them. Update the source link in the `README.md` row to the
-new `ref`.
+The refetch is a clean sync of `skills/<skill>/`, not a merge: it reverts local
+edits, restores deleted files, and removes files upstream dropped, so
+`git diff` is exactly what upstream changed. Nothing you add inside that
+directory survives — which is why the vendored skill's `LICENSE-<skill>` sits
+at the plugin root. Update the source link in the `README.md` row to the new
+`ref`.
 
 Drop a vendored skill with `./cli.ts remove <skill>`. It refuses any skill no
 lockfile claims, so it cannot delete this repo's own skills.
