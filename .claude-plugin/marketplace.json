@@ -14,6 +14,11 @@
       "name": "gl-js",
       "source": "./plugins/gl-js",
       "description": "Mapbox GL JS skills: cinematic flyovers from a text description."
+    },
+    {
+      "name": "marketplace",
+      "source": "./plugins/marketplace",
+      "description": "Vendor external skills into this marketplace as first-class plugins."
     }
   ]
 }
