@@ -52,6 +52,19 @@ upstream `LICENSE`/`NOTICE` file gathered above. Only rewrite the frontmatter
 skill frontmatter carries only `name` and `description`, so don't invent
 extra fields to record provenance.
 
+For an existing plugin, update its catalog metadata so the vendored skill is
+discoverable and accurately described — it's easy to copy the directory and
+stop there, leaving the README and manifests describing the plugin's old,
+narrower scope:
+
+- Add a row for the new skill to that plugin's skill table in `README.md`.
+- Re-read the plugin's `description` (both `.claude-plugin/plugin.json` and
+  `.codex-plugin/plugin.json`), the Codex manifest's `interface` block
+  (`shortDescription`, `longDescription`, `keywords`, `defaultPrompt`), and
+  the `.claude-plugin/marketplace.json` / `.agents/plugins/marketplace.json`
+  entries. Revise any of these that describe only the plugin's prior skills
+  and would no longer be accurate or complete.
+
 For a new plugin, create:
 
 - `plugins/<plugin>/.claude-plugin/plugin.json` — `name`, `version` (match the
