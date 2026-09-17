@@ -30,6 +30,9 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Install the Codex CLI
+        run: npm install -g @openai/codex@latest
+
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
@@ -40,11 +43,10 @@ jobs:
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
-
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr *)'
-
+          # The tools this repo's work needs. `claude` and `codex` run the same
+          # plugin validation as ci.yml, `npx` fetches upstream skills, and
+          # naming WebFetch and WebSearch here clears them from the action's
+          # default disallow list. The last two lines only bite on pull
+          # requests; the action authenticates `gh` through GH_TOKEN.
+          claude_args: |
+            --allowedTools "Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(claude:*),Bash(codex:*),WebFetch,WebSearch,mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr checks:*)"
