@@ -22,18 +22,15 @@ specifier, not bare `skills`: from this repo's root, `npx skills` resolves to
 the local `skills` package in `package.json` (which has no `bin`) instead of
 the external CLI, and fails with "could not determine executable to run".
 
-Fetch into a scratch directory, never straight into this repo, so a bad fetch
-or an unfamiliar output layout cannot touch the working tree:
+List what the repo ships and resolve the commit to vendor:
 
 ```bash
-tmp=$(mktemp -d)
-(cd "$tmp" && npx --yes skills@latest add <owner>/<repo> --skill <skill> -a claude-code)
-find "$tmp" -name SKILL.md
+npx --yes skills@latest add <owner>/<repo> --list
+git ls-remote https://github.com/<owner>/<repo> HEAD
 ```
 
-Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
-`scripts/`). Check the source repo's license permits redistribution before
-vendoring, and copy any upstream `LICENSE`/`NOTICE` file and attribution
+Check the source repo's license permits redistribution before vendoring, and
+copy any upstream `LICENSE`/`NOTICE` file and attribution
 alongside the vendored skill — even one stored at the source repo root rather
 than inside the skill directory — so the original terms travel with the code
 (this repo's own MIT `LICENSE:12` requires the same for anything copied from
@@ -45,10 +42,24 @@ Pick a plugin: reuse an existing one under `plugins/` when the skill's topic
 matches (more complexity/simplicity tools belong in `complexity`); otherwise
 scaffold a new one modeled on `plugins/gl-js`.
 
-Copy the skill directory verbatim to `plugins/<plugin>/skills/<skill>/`,
-keeping `assets/`, `references/`, and `scripts/` next to `SKILL.md`, plus any
-upstream `LICENSE`/`NOTICE` file gathered above. Only rewrite the frontmatter
-`description` if it doesn't already say when to use the skill — this repo's
+Fetch the skill into the plugin from the plugin's own directory, pinned to
+that commit:
+
+```bash
+(cd plugins/<plugin> && npx --yes skills@latest add "<owner>/<repo>#<sha>" \
+  --skill <skill> -a openclaw -y)
+```
+
+`-a openclaw` is load-bearing. `skills add` writes into the chosen agent's
+skills directory, and openclaw's is a bare `skills`, the only one that lands on
+`plugins/<plugin>/skills/<skill>/`. The command also writes
+`plugins/<plugin>/skills-lock.json`, which records the source and commit and is
+what `npm run vendor` reads later. Commit it.
+
+Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
+`scripts/`), and add any upstream `LICENSE`/`NOTICE` file gathered above next
+to it. Only rewrite the frontmatter `description` if it doesn't already say
+when to use the skill — this repo's
 skill frontmatter carries only `name` and `description`, so don't invent
 extra fields to record provenance. Attribution goes in the `README.md` skill
 row instead: link the source repo at the commit you vendored.
@@ -95,8 +106,22 @@ the user to add the new plugin's lines there.
 
 ## Updating a vendored skill
 
-Re-run the fetch into a fresh scratch directory and diff the result against
-`plugins/<plugin>/skills/<skill>/`. Apply upstream's changes; keep local
-adaptations you made on top unless upstream fixed the same thing. Leave
-version bumps to the release flow in the README's `## Release` section unless
-the user is ready to cut one.
+Bump `ref` in `plugins/<plugin>/skills-lock.json` to the commit you want, then:
+
+```bash
+npm run vendor
+git diff
+```
+
+`npm run vendor` refetches every vendored skill at its locked commit. It is a
+clean sync, not a merge: it reverts local edits, restores deleted files, and
+removes files upstream dropped, so `git diff` is exactly what upstream changed.
+Local adaptations do not survive it — reapply them on top, or don't make them.
+Update the source link in the `README.md` row to the new commit.
+
+Never use `npx skills update` or `npx skills experimental_install` here. Both
+ignore the agent and write `.agents/skills/`, reporting success while the
+vendored copy under `plugins/` stays stale.
+
+Leave version bumps to the release flow in the README's `## Release` section
+unless the user is ready to cut one.

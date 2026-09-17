@@ -10,6 +10,7 @@ plugins/<plugin>/
   .codex-plugin/plugin.json    Codex manifest
   skills/<skill>/SKILL.md
   agents/<agent>.md            optional
+  skills-lock.json             only when the plugin vendors external skills
 ```
 
 Two marketplace files list every plugin and must agree: `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json`.
@@ -18,6 +19,7 @@ Two marketplace files list every plugin and must agree: `.claude-plugin/marketpl
 
 ```bash
 npm run version              # propagate version and description into every plugin manifest
+npm run vendor               # refetch every vendored skill at the commit in its plugin's skills-lock.json
 claude plugin validate .     # validate the marketplace
 claude plugin validate plugins/<plugin>
 codex plugin marketplace add .
