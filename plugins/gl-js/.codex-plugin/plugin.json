@@ -6,8 +6,8 @@
     "name": "Stepan Kuzmin",
     "url": "https://github.com/stepankuzmin"
   },
-  "homepage": "https://github.com/stepankuzmin/skills",
-  "repository": "https://github.com/stepankuzmin/skills",
+  "homepage": "https://github.com/stepankuzmin/stepankuzmin-skills",
+  "repository": "https://github.com/stepankuzmin/stepankuzmin-skills",
   "license": "MIT",
   "keywords": [
     "mapbox",
@@ -28,7 +28,7 @@
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/stepankuzmin/skills",
+    "websiteURL": "https://github.com/stepankuzmin/stepankuzmin-skills",
     "defaultPrompt": [
       "Create a dynamic drone flyover of Central Park at dusk",
       "Orbit the Eiffel Tower at night",

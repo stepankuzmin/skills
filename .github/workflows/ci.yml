@@ -15,5 +15,5 @@ jobs:
       - run: claude plugin validate plugins/complexity
       - run: claude plugin validate plugins/gl-js
       - run: codex plugin marketplace add .
-      - run: codex plugin add complexity@stepankuzmin
-      - run: codex plugin add gl-js@stepankuzmin
+      - run: codex plugin add complexity@stepankuzmin-skills
+      - run: codex plugin add gl-js@stepankuzmin-skills
