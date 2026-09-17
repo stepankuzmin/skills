@@ -16,21 +16,28 @@ single `stepankuzmin` marketplace instead, alongside `complexity` and `gl-js`.
 Confirm the owner/repo and skill name. If the user only names a skill, look it
 up on skills.sh or ask.
 
-Check `npx --yes skills add --help` before relying on any flag below — the CLI
-is external and can change.
+Run `npx --yes skills@latest add --help` before relying on any flag below —
+the CLI is external and can change. Always pin the `skills@latest` package
+specifier, not bare `skills`: from this repo's root, `npx skills` resolves to
+the local `skills` package in `package.json` (which has no `bin`) instead of
+the external CLI, and fails with "could not determine executable to run".
 
 Fetch into a scratch directory, never straight into this repo, so a bad fetch
 or an unfamiliar output layout cannot touch the working tree:
 
 ```bash
 tmp=$(mktemp -d)
-(cd "$tmp" && npx --yes skills add <owner>/<repo> --skill <skill> -a claude-code)
+(cd "$tmp" && npx --yes skills@latest add <owner>/<repo> --skill <skill> -a claude-code)
 find "$tmp" -name SKILL.md
 ```
 
 Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
 `scripts/`). Check the source repo's license permits redistribution before
-vendoring.
+vendoring, and copy any upstream `LICENSE`/`NOTICE` file and attribution
+alongside the vendored skill — even one stored at the source repo root rather
+than inside the skill directory — so the original terms travel with the code
+(this repo's own MIT `LICENSE:12` requires the same for anything copied from
+it).
 
 ## Place it in a plugin
 
@@ -39,10 +46,11 @@ matches (more complexity/simplicity tools belong in `complexity`); otherwise
 scaffold a new one modeled on `plugins/gl-js`.
 
 Copy the skill directory verbatim to `plugins/<plugin>/skills/<skill>/`,
-keeping `assets/`, `references/`, and `scripts/` next to `SKILL.md`. Only
-rewrite the frontmatter `description` if it doesn't already say when to use
-the skill — this repo's skill frontmatter carries only `name` and
-`description`, so don't invent extra fields to record provenance.
+keeping `assets/`, `references/`, and `scripts/` next to `SKILL.md`, plus any
+upstream `LICENSE`/`NOTICE` file gathered above. Only rewrite the frontmatter
+`description` if it doesn't already say when to use the skill — this repo's
+skill frontmatter carries only `name` and `description`, so don't invent
+extra fields to record provenance.
 
 For a new plugin, create:
 
