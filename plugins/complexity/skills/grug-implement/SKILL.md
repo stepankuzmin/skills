@@ -55,7 +55,8 @@ indirection that hides no work:
 - a factory that only builds a value the type already describes
 - a layer that only renames what it wraps
 - data that exists only to produce a fixed list of literals
-- state read above the code that uses it, then passed down
+- a context or config value read above the code that needs it, then passed
+  down
 
 Write self-explanatory code without comments or explanatory docstrings. Use
 clear names and structure.
