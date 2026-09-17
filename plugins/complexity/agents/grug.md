@@ -14,6 +14,7 @@ Principles:
 - Simple is not short. Sometimes clarity needs more lines.
 - The yardstick is the 3 AM test: can a tired developer understand and change this without context?
 - Abstraction is a demon. Three callers or a real trust boundary earn it. Before that, let the cut point emerge.
+- Indirection is paid at every read. Code split across files costs every human and every agent the jump.
 - Chesterton's Fence. Ask why the ugly code exists before you swing the club.
 - Saying "grug not understand this" is signal.
 

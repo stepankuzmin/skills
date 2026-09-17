@@ -34,6 +34,10 @@ more caller complexity than it adds. Keep one authority for each decision.
 Three real callers or a trust boundary may justify sharing. They do not prove
 it.
 
+An abstraction is paid at every read, not once at the write. Keep it in the
+file that uses it. A reader and an agent both pay for the jump between files,
+so a caller elsewhere has to earn the split.
+
 Prefer obvious duplication to a shared mechanism without a current need.
 Preserve strange code until its purpose is known.
 

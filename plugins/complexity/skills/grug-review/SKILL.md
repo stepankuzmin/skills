@@ -32,6 +32,10 @@ Post only when you can write simpler final code and say what it gives up.
 Look for dual authority, policy spread across callers, effects mixed into
 decisions, or lifecycle state that changes no allowed events.
 
+Look for indirection that hides no work: a name for a value used once, a
+factory the type already describes, a layer that only renames what it wraps, or
+a file with one caller. Every read pays for the jump between files.
+
 Three real callers or a trust boundary may justify an abstraction. They do not
 prove it. A deep module hides hard work behind a small interface. Keep one
 authority for each decision.
