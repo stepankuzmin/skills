@@ -50,7 +50,8 @@ keeping `assets/`, `references/`, and `scripts/` next to `SKILL.md`, plus any
 upstream `LICENSE`/`NOTICE` file gathered above. Only rewrite the frontmatter
 `description` if it doesn't already say when to use the skill — this repo's
 skill frontmatter carries only `name` and `description`, so don't invent
-extra fields to record provenance.
+extra fields to record provenance. Attribution goes in the `README.md` skill
+row instead: link the source repo at the commit you vendored.
 
 For an existing plugin, update its catalog metadata so the vendored skill is
 discoverable and accurately described — it's easy to copy the directory and

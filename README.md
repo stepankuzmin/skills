@@ -12,7 +12,7 @@
 | [`grug-implement`](plugins/complexity/skills/grug-implement/SKILL.md) | Implement a feature or refactor from an accepted plan or enough live context, with the smallest clear diff. |
 | [`grug-review`](plugins/complexity/skills/grug-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. |
 | [`marie-kondo`](plugins/complexity/skills/marie-kondo/SKILL.md) | Aggressive refactor pass that cuts code that doesn't earn its keep. |
-| [`uncomplect`](plugins/complexity/skills/uncomplect/SKILL.md) | Pressure-test a stateful system or replacement design through Hickey's complection, Ousterhout's deep modules, Young's deletability, DDD boundaries, typed effects, and explicit lifecycle modeling. |
+| [`uncomplect`](plugins/complexity/skills/uncomplect/SKILL.md) | Pressure-test a stateful system or replacement design through Hickey's complection, Ousterhout's deep modules, Young's deletability, DDD boundaries, typed effects, and explicit lifecycle modeling. Vendored from [joelhooks/skills](https://github.com/joelhooks/skills/tree/7c0a930d761bc05f50c3d31cf55ba7f289b45861/skills/uncomplect). |
 
 ## Install
 
