@@ -95,10 +95,6 @@ Run `npm run version` so `cli.ts` propagates the version and description from
 `package.json` and `marketplace.json` into every plugin manifest, then
 `claude plugin validate plugins/<plugin>` (and `claude plugin validate .`).
 
-`.github/workflows/ci.yml` lists one `claude plugin validate` line and two
-`codex plugin` lines per plugin by hand. You cannot edit workflow files — tell
-the user to add the new plugin's lines there.
-
 ## Updating a vendored skill
 
 ```bash
