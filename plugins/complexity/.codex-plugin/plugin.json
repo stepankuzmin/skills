@@ -6,8 +6,8 @@
     "name": "Stepan Kuzmin",
     "url": "https://github.com/stepankuzmin"
   },
-  "homepage": "https://github.com/stepankuzmin/skills",
-  "repository": "https://github.com/stepankuzmin/skills",
+  "homepage": "https://github.com/stepankuzmin/stepankuzmin-skills",
+  "repository": "https://github.com/stepankuzmin/stepankuzmin-skills",
   "license": "MIT",
   "keywords": [
     "grug",
@@ -26,7 +26,7 @@
       "Interactive",
       "Read"
     ],
-    "websiteURL": "https://github.com/stepankuzmin/skills",
+    "websiteURL": "https://github.com/stepankuzmin/stepankuzmin-skills",
     "defaultPrompt": [
       "Run a grug review on this branch",
       "Grug review PR #123",

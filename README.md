@@ -18,21 +18,21 @@
 Every agent, via the skills CLI:
 
 ```bash
-npx skills add stepankuzmin/skills
+npx skills add stepankuzmin/stepankuzmin-skills
 ```
 
 Claude Code plugin, with the grug agent:
 
 ```bash
-claude plugin marketplace add stepankuzmin/skills
-claude plugin install complexity@stepankuzmin
+claude plugin marketplace add stepankuzmin/stepankuzmin-skills
+claude plugin install complexity@stepankuzmin-skills
 ```
 
 Codex plugin:
 
 ```bash
-codex plugin marketplace add stepankuzmin/skills
-codex plugin add complexity@stepankuzmin
+codex plugin marketplace add stepankuzmin/stepankuzmin-skills
+codex plugin add complexity@stepankuzmin-skills
 ```
 
 ## GL JS
@@ -44,15 +44,15 @@ codex plugin add complexity@stepankuzmin
 Claude Code plugin:
 
 ```bash
-claude plugin marketplace add stepankuzmin/skills
-claude plugin install gl-js@stepankuzmin
+claude plugin marketplace add stepankuzmin/stepankuzmin-skills
+claude plugin install gl-js@stepankuzmin-skills
 ```
 
 Codex plugin:
 
 ```bash
-codex plugin marketplace add stepankuzmin/skills
-codex plugin add gl-js@stepankuzmin
+codex plugin marketplace add stepankuzmin/stepankuzmin-skills
+codex plugin add gl-js@stepankuzmin-skills
 ```
 
 ## Recommendations

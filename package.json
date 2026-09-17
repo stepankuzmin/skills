@@ -1,11 +1,11 @@
 {
-  "name": "skills",
+  "name": "stepankuzmin-skills",
   "version": "0.2.0",
   "description": "Grug agent and grug-review skill: clarity-first code review.",
   "type": "module",
   "private": true,
   "license": "MIT",
-  "repository": "https://github.com/stepankuzmin/skills",
+  "repository": "https://github.com/stepankuzmin/stepankuzmin-skills",
   "engines": {
     "node": ">=22.20.0"
   },
