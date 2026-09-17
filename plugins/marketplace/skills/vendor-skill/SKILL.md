@@ -22,22 +22,16 @@ specifier, not bare `skills`: from this repo's root, `npx skills` resolves to
 the local `skills` package in `package.json` (which has no `bin`) instead of
 the external CLI, and fails with "could not determine executable to run".
 
-Fetch into a scratch directory, never straight into this repo, so a bad fetch
-or an unfamiliar output layout cannot touch the working tree:
+List what the repo ships:
 
 ```bash
-tmp=$(mktemp -d)
-(cd "$tmp" && npx --yes skills@latest add <owner>/<repo> --skill <skill> -a claude-code)
-find "$tmp" -name SKILL.md
+npx --yes skills@latest add <owner>/<repo> --list
 ```
 
-Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
-`scripts/`). Check the source repo's license permits redistribution before
-vendoring, and copy any upstream `LICENSE`/`NOTICE` file and attribution
-alongside the vendored skill — even one stored at the source repo root rather
-than inside the skill directory — so the original terms travel with the code
-(this repo's own MIT `LICENSE:12` requires the same for anything copied from
-it).
+Check the source repo's license permits redistribution before vendoring. Note
+any `LICENSE`/`NOTICE` file it requires you to carry, including one at the
+source repo root rather than inside the skill directory (this repo's own MIT
+`LICENSE:12` requires the same for anything copied from it).
 
 ## Place it in a plugin
 
@@ -45,12 +39,26 @@ Pick a plugin: reuse an existing one under `plugins/` when the skill's topic
 matches (more complexity/simplicity tools belong in `complexity`); otherwise
 scaffold a new one modeled on `plugins/gl-js`.
 
-Copy the skill directory verbatim to `plugins/<plugin>/skills/<skill>/`,
-keeping `assets/`, `references/`, and `scripts/` next to `SKILL.md`, plus any
-upstream `LICENSE`/`NOTICE` file gathered above. Only rewrite the frontmatter
-`description` if it doesn't already say when to use the skill — this repo's
-skill frontmatter carries only `name` and `description`, so don't invent
-extra fields to record provenance.
+Fetch the skill:
+
+```bash
+./cli.ts add <owner>/<repo> <skill> <plugin>
+```
+
+It pins upstream's current commit and writes
+`plugins/<plugin>/skills-lock.json`, which records the source and that commit.
+Commit the lockfile; read its `ref` for the `README.md` attribution link.
+
+Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
+`scripts/`). Copy any upstream `LICENSE`/`NOTICE` to
+`plugins/<plugin>/LICENSE-<skill>`, outside `skills/<skill>/`, because `update`
+wipes that directory and would drop a notice you are still required to carry.
+
+Only rewrite the frontmatter `description` if it doesn't already say when to
+use the skill — this repo's skill frontmatter carries only `name` and
+`description`, so don't invent extra fields to record provenance. Attribution
+goes in the `README.md` skill row instead: link the source repo at the commit
+you vendored.
 
 For an existing plugin, update its catalog metadata so the vendored skill is
 discoverable and accurately described — it's easy to copy the directory and
@@ -88,14 +96,29 @@ Run `npm run version` so `cli.ts` propagates the version and description from
 `package.json` and `marketplace.json` into every plugin manifest, then
 `claude plugin validate plugins/<plugin>` (and `claude plugin validate .`).
 
-`.github/workflows/ci.yml` lists one `claude plugin validate` line and two
-`codex plugin` lines per plugin by hand. You cannot edit workflow files — tell
-the user to add the new plugin's lines there.
-
 ## Updating a vendored skill
 
-Re-run the fetch into a fresh scratch directory and diff the result against
-`plugins/<plugin>/skills/<skill>/`. Apply upstream's changes; keep local
-adaptations you made on top unless upstream fixed the same thing. Leave
-version bumps to the release flow in the README's `## Release` section unless
-the user is ready to cut one.
+```bash
+./cli.ts update <skill>
+git diff
+```
+
+Omit the skill name to refetch every vendored skill. Each one moves to
+upstream's current commit and the lockfile `ref` is re-pinned to it.
+
+The refetch is a clean sync of `skills/<skill>/`, not a merge: it reverts local
+edits, restores deleted files, and removes files upstream dropped, so
+`git diff` is exactly what upstream changed. Nothing you add inside that
+directory survives — which is why the vendored skill's `LICENSE-<skill>` sits
+at the plugin root. Update the source link in the `README.md` row to the new
+`ref`.
+
+Drop a vendored skill with `./cli.ts remove <skill>`. It refuses any skill no
+lockfile claims, so it cannot delete this repo's own skills.
+
+Never use `npx skills update` or `npx skills experimental_install` here. Both
+ignore the agent and write `.agents/skills/`, reporting success while the
+vendored copy under `plugins/` stays stale.
+
+Leave version bumps to the release flow in the README's `## Release` section
+unless the user is ready to cut one.

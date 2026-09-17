@@ -1,7 +1,7 @@
 {
   "name": "complexity",
   "version": "0.2.0",
-  "description": "Grug agent and grug-review skill: clarity-first code review.",
+  "description": "Grug agent and skills for clarity-first review, design, refactoring, and architectural replacement.",
   "author": {
     "name": "Stepan Kuzmin"
   },
