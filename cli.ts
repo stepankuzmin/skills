@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-// The CLI for this marketplace.
-//
-//   ./cli.ts version    Propagate the version and each plugin's marketplace description into its manifests
-//   ./cli.ts vendor     Refresh every vendored skill from its plugin's skills-lock.json
+// The CLI for this marketplace. Run it with no arguments for usage.
 //
 // The two marketplace.json files carry the descriptions by hand.
 import { spawnSync } from "node:child_process";
@@ -77,74 +74,109 @@ function version(): void {
   );
 }
 
-// Pin the package: from anywhere in this repo, a bare `npx skills` resolves to
-// the local `skills` package in package.json, which has no bin.
-const SKILLS_CLI = "skills@latest";
+// `skills` writes into the chosen agent's skills directory, resolved from cwd.
+// openclaw's is a bare `skills`, the only one that lands on this repo's
+// plugins/<plugin>/skills/<skill> layout. `skills update` ignores the agent and
+// writes .agents/skills, so update below re-adds at a fresh commit instead.
+const AGENT = "openclaw";
 
-// `skills add` writes into the chosen agent's skills directory, resolved from
-// cwd. openclaw's is a bare `skills`, the only one that lands on this repo's
-// plugins/<plugin>/skills/<skill> layout. `skills update` and
-// `experimental_install` ignore the agent and always write .agents/skills.
-const VENDOR_AGENT = "openclaw";
-
-// `<owner>/<repo>#<ref>`, or bare when the entry tracks the default branch.
-function sourceSpec(entry: unknown, where: string): string {
-  if (!isRecord(entry)) throw new Error(`${where}: must be an object`);
-  const sourceType = field(entry, "sourceType", where);
-  if (sourceType !== "github") {
-    throw new Error(`${where}: only "github" sources are supported, got "${sourceType}"`);
+function skills(plugin: string, args: string[]): void {
+  const { status, stdout, stderr } = spawnSync(
+    "npx",
+    // A bare `npx skills` resolves to the local `skills` package, which has no bin.
+    ["--yes", "skills@latest", ...args, "-a", AGENT, "-y"],
+    { cwd: join(PLUGINS, plugin), encoding: "utf8" },
+  );
+  if (status !== 0) {
+    console.error(stdout ?? "");
+    console.error(stderr ?? "");
+    throw new Error(`skills ${args[0]} failed in plugins/${plugin}`);
   }
-  const source = field(entry, "source", where);
-  if (entry.ref === undefined) return source;
-  return `${source}#${field(entry, "ref", where)}`;
 }
 
-function vendor(): void {
-  const locks = readdirSync(PLUGINS, { withFileTypes: true })
+function headCommit(source: string): string {
+  const { status, stdout } = spawnSync(
+    "git",
+    ["ls-remote", `https://github.com/${source}`, "HEAD"],
+    { encoding: "utf8" },
+  );
+  const sha = stdout.split(/\s/)[0];
+  if (status !== 0 || !sha) throw new Error(`cannot resolve HEAD of ${source}`);
+  return sha;
+}
+
+function vendored(): { plugin: string; name: string; source: string }[] {
+  return readdirSync(PLUGINS, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => ({ plugin: entry.name, path: join(PLUGINS, entry.name, LOCK_FILE) }))
-    .filter(({ path }) => existsSync(path));
-
-  if (locks.length === 0) {
-    console.log(`No plugin has a ${LOCK_FILE}. Nothing is vendored.`);
-    return;
-  }
-
-  let failed = 0;
-  for (const { plugin, path } of locks) {
-    const lock = readJson(path);
-    if (!isRecord(lock) || !isRecord(lock.skills)) {
-      throw new Error(`${path}: "skills" must be an object`);
-    }
-    for (const [name, entry] of Object.entries(lock.skills)) {
-      const spec = sourceSpec(entry, `${path}: ${name}`);
-      console.log(`${plugin}/${name} ← ${spec}`);
-      const args = ["--yes", SKILLS_CLI, "add", spec, "--skill", name, "-a", VENDOR_AGENT, "-y"];
-      const result = spawnSync("npx", args, { cwd: join(PLUGINS, plugin), encoding: "utf8" });
-      if (result.status !== 0) {
-        failed++;
-        console.error(result.stdout ?? "");
-        console.error(result.stderr ?? "");
-        console.error(`  failed: ${plugin}/${name}`);
+    .flatMap(({ name: plugin }) => {
+      const lock = join(PLUGINS, plugin, LOCK_FILE);
+      if (!existsSync(lock)) return [];
+      const json = readJson(lock);
+      if (!isRecord(json) || !isRecord(json.skills)) {
+        throw new Error(`${lock}: "skills" must be an object`);
       }
-    }
-  }
+      return Object.entries(json.skills).map(([name, entry]) => {
+        const where = `${lock}: ${name}`;
+        if (!isRecord(entry)) throw new Error(`${where}: must be an object`);
+        const sourceType = field(entry, "sourceType", where);
+        if (sourceType !== "github") {
+          throw new Error(`${where}: only "github" sources are supported, got "${sourceType}"`);
+        }
+        return { plugin, name, source: field(entry, "source", where) };
+      });
+    });
+}
 
-  if (failed > 0) process.exit(1);
-  console.log("Review what upstream changed with `git diff`.");
+function fetchSkill(plugin: string, source: string, name: string): void {
+  const commit = headCommit(source);
+  console.log(`plugins/${plugin}/skills/${name} ← ${source}#${commit}`);
+  skills(plugin, ["add", `${source}#${commit}`, "--skill", name]);
 }
 
 const USAGE = `usage: cli <command>
 
-  version    Propagate version and description into every plugin manifest
-  vendor     Refresh every vendored skill from its plugin's skills-lock.json`;
+  version                              Propagate version and description into every plugin manifest
+  add <owner>/<repo> <skill> <plugin>  Vendor a skill into a plugin at its current upstream commit
+  remove <skill>                       Delete a vendored skill and its lockfile entry
+  update [skill...]                    Refetch vendored skills at their current upstream commit`;
 
-const commands: Record<string, () => void> = { version, vendor };
-const command = commands[process.argv[2] ?? ""];
-
-if (!command) {
+function usage(): never {
   console.error(USAGE);
   process.exit(1);
 }
 
-command();
+function add([source, name, plugin]: string[]): void {
+  if (!source || !name || !plugin) usage();
+  if (!existsSync(join(PLUGINS, plugin))) throw new Error(`no such plugin: ${plugin}`);
+  fetchSkill(plugin, source, name);
+}
+
+function remove([name]: string[]): void {
+  if (!name) usage();
+  const skill = vendored().find((entry) => entry.name === name);
+  if (!skill) throw new Error(`${name} is not vendored by any plugin`);
+  skills(skill.plugin, ["remove", name]);
+  console.log(`removed plugins/${skill.plugin}/skills/${name}`);
+}
+
+function update(names: string[]): void {
+  const all = vendored();
+  const targets = names.length === 0 ? all : names.map((name) => {
+    const skill = all.find((entry) => entry.name === name);
+    if (!skill) throw new Error(`${name} is not vendored by any plugin`);
+    return skill;
+  });
+  if (targets.length === 0) {
+    console.log(`No plugin has a ${LOCK_FILE}. Nothing is vendored.`);
+    return;
+  }
+  for (const { plugin, source, name } of targets) fetchSkill(plugin, source, name);
+  console.log("Review what upstream changed with `git diff`.");
+}
+
+const commands: Record<string, (args: string[]) => void> = { version, add, remove, update };
+const command = commands[process.argv[2] ?? ""];
+
+if (!command) usage();
+
+command(process.argv.slice(3));

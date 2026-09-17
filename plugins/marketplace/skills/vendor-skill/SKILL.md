@@ -22,11 +22,10 @@ specifier, not bare `skills`: from this repo's root, `npx skills` resolves to
 the local `skills` package in `package.json` (which has no `bin`) instead of
 the external CLI, and fails with "could not determine executable to run".
 
-List what the repo ships and resolve the commit to vendor:
+List what the repo ships:
 
 ```bash
 npx --yes skills@latest add <owner>/<repo> --list
-git ls-remote https://github.com/<owner>/<repo> HEAD
 ```
 
 Check the source repo's license permits redistribution before vendoring, and
@@ -42,19 +41,15 @@ Pick a plugin: reuse an existing one under `plugins/` when the skill's topic
 matches (more complexity/simplicity tools belong in `complexity`); otherwise
 scaffold a new one modeled on `plugins/gl-js`.
 
-Fetch the skill into the plugin from the plugin's own directory, pinned to
-that commit:
+Fetch the skill:
 
 ```bash
-(cd plugins/<plugin> && npx --yes skills@latest add "<owner>/<repo>#<sha>" \
-  --skill <skill> -a openclaw -y)
+./cli.ts add <owner>/<repo> <skill> <plugin>
 ```
 
-`-a openclaw` is load-bearing. `skills add` writes into the chosen agent's
-skills directory, and openclaw's is a bare `skills`, the only one that lands on
-`plugins/<plugin>/skills/<skill>/`. The command also writes
-`plugins/<plugin>/skills-lock.json`, which records the source and commit and is
-what `npm run vendor` reads later. Commit it.
+It pins upstream's current commit and writes
+`plugins/<plugin>/skills-lock.json`, which records the source and that commit.
+Commit the lockfile; read its `ref` for the `README.md` attribution link.
 
 Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
 `scripts/`), and add any upstream `LICENSE`/`NOTICE` file gathered above next
@@ -106,18 +101,22 @@ the user to add the new plugin's lines there.
 
 ## Updating a vendored skill
 
-Bump `ref` in `plugins/<plugin>/skills-lock.json` to the commit you want, then:
-
 ```bash
-npm run vendor
+./cli.ts update <skill>
 git diff
 ```
 
-`npm run vendor` refetches every vendored skill at its locked commit. It is a
-clean sync, not a merge: it reverts local edits, restores deleted files, and
-removes files upstream dropped, so `git diff` is exactly what upstream changed.
-Local adaptations do not survive it — reapply them on top, or don't make them.
-Update the source link in the `README.md` row to the new commit.
+Omit the skill name to refetch every vendored skill. Each one moves to
+upstream's current commit and the lockfile `ref` is re-pinned to it.
+
+The refetch is a clean sync, not a merge: it reverts local edits, restores
+deleted files, and removes files upstream dropped, so `git diff` is exactly
+what upstream changed. Local adaptations do not survive it — reapply them on
+top, or don't make them. Update the source link in the `README.md` row to the
+new `ref`.
+
+Drop a vendored skill with `./cli.ts remove <skill>`. It refuses any skill no
+lockfile claims, so it cannot delete this repo's own skills.
 
 Never use `npx skills update` or `npx skills experimental_install` here. Both
 ignore the agent and write `.agents/skills/`, reporting success while the

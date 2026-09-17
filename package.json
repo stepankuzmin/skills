@@ -10,7 +10,6 @@
     "node": ">=22.20.0"
   },
   "scripts": {
-    "version": "node cli.ts version",
-    "vendor": "node cli.ts vendor"
+    "version": "node cli.ts version"
   }
 }
