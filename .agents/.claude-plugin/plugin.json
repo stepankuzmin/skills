@@ -1,0 +1,10 @@
+{
+  "name": "sk",
+  "version": "0.2.0",
+  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, Mapbox GL JS flyovers, and skill vendoring.",
+  "author": {
+    "name": "Stepan Kuzmin"
+  },
+  "repository": "https://github.com/stepankuzmin/skills",
+  "license": "MIT"
+}

@@ -6,19 +6,9 @@
   },
   "plugins": [
     {
-      "name": "complexity",
-      "source": "./plugins/complexity",
-      "description": "Grug agent and skills for clarity-first review, design, refactoring, and architectural replacement."
-    },
-    {
-      "name": "gl-js",
-      "source": "./plugins/gl-js",
-      "description": "Mapbox GL JS skills: cinematic flyovers from a text description."
-    },
-    {
-      "name": "marketplace",
-      "source": "./plugins/marketplace",
-      "description": "Vendor external skills into this marketplace as first-class plugins."
+      "name": "sk",
+      "source": "./.agents",
+      "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, Mapbox GL JS flyovers, and skill vendoring."
     }
   ]
 }

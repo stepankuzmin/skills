@@ -13,10 +13,5 @@ jobs:
       - run: npm install -g @anthropic-ai/claude-code@latest @openai/codex@latest
       - run: claude plugin validate .
       - run: codex plugin marketplace add .
-      - name: Validate and register every plugin
-        run: |
-          for dir in plugins/*/; do
-            name=$(basename "$dir")
-            claude plugin validate "${dir%/}"
-            codex plugin add "$name@stepankuzmin"
-          done
+      - run: claude plugin validate .agents
+      - run: codex plugin add sk@stepankuzmin
