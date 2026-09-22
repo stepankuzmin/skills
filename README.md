@@ -42,6 +42,6 @@ codex plugin add sk@stepankuzmin
 ```bash
 npm version <patch|minor|major> --no-git-tag-version --ignore-scripts=false
 git commit -am "v<new>"
-git tag v<new>
+git tag -a v<new> -m "v<new>"
 git push --follow-tags
 ```
