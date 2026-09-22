@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "sk",
-      "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, Mapbox GL JS flyovers, and skill vendoring.",
+      "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, and Mapbox GL JS flyovers.",
       "source": {
         "source": "local",
         "path": "./.agents"

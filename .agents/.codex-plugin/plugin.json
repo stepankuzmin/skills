@@ -1,7 +1,7 @@
 {
   "name": "sk",
   "version": "0.2.0",
-  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, Mapbox GL JS flyovers, and skill vendoring.",
+  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, and Mapbox GL JS flyovers.",
   "author": {
     "name": "Stepan Kuzmin",
     "url": "https://github.com/stepankuzmin"
@@ -17,14 +17,13 @@
     "architecture",
     "mapbox",
     "gl-js",
-    "flyover",
-    "vendoring"
+    "flyover"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Stepan Kuzmin Skills",
     "shortDescription": "Grug agent, complexity-cutting skills, Mapbox flyovers",
-    "longDescription": "Grug designs, implements, and reviews the smallest clear change, and cuts code that doesn't earn its keep. Uncomplect pressure-tests a stateful system through Hickey's complection, Ousterhout's deep modules, and Young's deletability. Flyover turns a text description into a cinematic 3D Mapbox GL JS page. Vendor-skill imports external skills into this marketplace.",
+    "longDescription": "Grug designs, implements, and reviews the smallest clear change, and cuts code that doesn't earn its keep. Uncomplect pressure-tests a stateful system through Hickey's complection, Ousterhout's deep modules, and Young's deletability. Flyover turns a text description into a cinematic 3D Mapbox GL JS page.",
     "developerName": "Stepan Kuzmin",
     "category": "Developer Tools",
     "capabilities": [

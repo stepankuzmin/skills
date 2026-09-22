@@ -1,7 +1,7 @@
 {
   "name": "sk",
   "version": "0.2.0",
-  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, Mapbox GL JS flyovers, and skill vendoring.",
+  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, and Mapbox GL JS flyovers.",
   "author": {
     "name": "Stepan Kuzmin"
   },

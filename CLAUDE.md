@@ -10,7 +10,8 @@ A plugin marketplace. It ships one plugin, `sk`, carrying every skill and the gr
 .agents/.claude-plugin/plugin.json   Claude Code manifest
 .agents/.codex-plugin/plugin.json    Codex manifest
 .agents/agents/<agent>.md
-.agents/skills/<skill>/SKILL.md
+.agents/skills/<skill>/SKILL.md   everything the plugin ships
+.claude/skills/<skill>/SKILL.md   repo maintenance, deliberately not shipped
 skills-lock.json                  vendored skills, maintained by npx skills
 ```
 
@@ -33,7 +34,7 @@ codex plugin add sk@stepankuzmin
 3. Revise the plugin description in `.claude-plugin/marketplace.json` if it no longer describes what ships, then run `npm run version`.
 4. Run `claude plugin validate .` and `claude plugin validate .agents`.
 
-To vendor a skill from another repo, use the `vendor-skill` skill.
+To vendor a skill from another repo, use `vendor-skill`. It lives in `.claude/skills/`, outside the plugin, so marketplace customers never receive it. Anything under `.agents/skills/` ships.
 
 ## Editing manifests
 

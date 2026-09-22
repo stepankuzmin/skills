@@ -14,6 +14,10 @@ plugin instead.
 `npx skills` owns `.agents/skills/`. Run it from the repo root and it writes
 exactly where this marketplace serves from, so vendoring needs no wrapper.
 
+This skill lives in `.claude/skills/`, not `.agents/skills/`, so it loads for
+whoever works in this repo and never ships to marketplace customers. Keep it
+there.
+
 ## Gather the source
 
 Confirm the owner/repo and skill name. If the user only names a skill, look it

@@ -14,7 +14,6 @@ One plugin, `sk`, carrying every skill and the grug agent. Skills invoke as `sk:
 | [`marie-kondo`](.agents/skills/marie-kondo/SKILL.md) | Aggressive refactor pass that cuts code that doesn't earn its keep. |
 | [`uncomplect`](.agents/skills/uncomplect/SKILL.md) | Pressure-test a stateful system or replacement design through Hickey's complection, Ousterhout's deep modules, Young's deletability, DDD boundaries, typed effects, and explicit lifecycle modeling. Vendored from [joelhooks/skills](https://github.com/joelhooks/skills/tree/7c0a930d761bc05f50c3d31cf55ba7f289b45861/skills/uncomplect). |
 | [`flyover`](.agents/skills/flyover/SKILL.md) | Turn a text description into a cinematic 3D map flyover: GeoJSON camera waypoints plus a self-contained Mapbox GL JS page. Needs `MAPBOX_ACCESS_TOKEN`. |
-| [`vendor-skill`](.agents/skills/vendor-skill/SKILL.md) | Vendor an external skill into this marketplace, or refresh one already vendored. |
 
 ## Install
 
