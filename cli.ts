@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// The CLI for this marketplace.
-//
-//   ./cli.ts version    Propagate the version and each plugin's marketplace description into its manifests
+// The CLI for this marketplace. Run it with no arguments for usage.
 //
 // The two marketplace.json files carry the descriptions by hand.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -44,6 +42,35 @@ function set(record: Record<string, unknown>, key: string, value: string): boole
   return true;
 }
 
+function version(): void {
+  const pkg = readJson(join(root, "package.json"));
+  if (!isRecord(pkg)) throw new Error("package.json: must be an object");
+  const version = field(pkg, "version", "package.json");
+  const changed: string[] = [];
+
+  for (const { path, description } of localPlugins(readJson(MARKETPLACE))) {
+    for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
+      const manifestPath = join(root, path, manifest);
+      if (!existsSync(manifestPath)) continue; // a plugin may not ship every harness's manifest
+      const json = readJson(manifestPath);
+      if (!isRecord(json)) throw new Error(`${manifestPath}: must be an object`);
+      let dirty = set(json, "version", version);
+      if (set(json, "description", description)) dirty = true;
+      if (dirty) {
+        writeJson(manifestPath, json);
+        changed.push(`${path}/${manifest}`);
+      }
+    }
+  }
+
+  console.log(`skills ${version}`);
+  console.log(
+    changed.length === 0
+      ? "Manifests already current."
+      : "Synced:\n" + changed.map((file) => `  ${file}`).join("\n"),
+  );
+}
+
 const USAGE = `usage: cli version
 
   version    Propagate version and description into every plugin manifest`;
@@ -53,29 +80,4 @@ if (process.argv[2] !== "version") {
   process.exit(1);
 }
 
-const pkg = readJson(join(root, "package.json"));
-if (!isRecord(pkg)) throw new Error("package.json: must be an object");
-const version = field(pkg, "version", "package.json");
-const changed: string[] = [];
-
-for (const { path, description } of localPlugins(readJson(MARKETPLACE))) {
-  for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
-    const manifestPath = join(root, path, manifest);
-    if (!existsSync(manifestPath)) continue; // a plugin may not ship every harness's manifest
-    const json = readJson(manifestPath);
-    if (!isRecord(json)) throw new Error(`${manifestPath}: must be an object`);
-    let dirty = set(json, "version", version);
-    if (set(json, "description", description)) dirty = true;
-    if (dirty) {
-      writeJson(manifestPath, json);
-      changed.push(`${path}/${manifest}`);
-    }
-  }
-}
-
-console.log(`skills ${version}`);
-console.log(
-  changed.length === 0
-    ? "Manifests already current."
-    : "Synced:\n" + changed.map((file) => `  ${file}`).join("\n"),
-);
+version();

@@ -1,0 +1,43 @@
+{
+  "name": "sk",
+  "version": "0.3.0",
+  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, and Mapbox GL JS flyovers.",
+  "author": {
+    "name": "Stepan Kuzmin",
+    "url": "https://github.com/stepankuzmin"
+  },
+  "homepage": "https://github.com/stepankuzmin/skills",
+  "repository": "https://github.com/stepankuzmin/skills",
+  "license": "MIT",
+  "keywords": [
+    "grug",
+    "review",
+    "simplification",
+    "refactoring",
+    "architecture",
+    "mapbox",
+    "gl-js",
+    "flyover"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Stepan Kuzmin Skills",
+    "shortDescription": "Grug agent, complexity-cutting skills, Mapbox flyovers",
+    "longDescription": "Grug designs, implements, and reviews the smallest clear change, and cuts code that doesn't earn its keep. Uncomplect pressure-tests a stateful system through Hickey's complection, Ousterhout's deep modules, and Young's deletability. Flyover turns a text description into a cinematic 3D Mapbox GL JS page.",
+    "developerName": "Stepan Kuzmin",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/stepankuzmin/skills",
+    "defaultPrompt": [
+      "Run a grug review on this branch",
+      "Ask grug if this is over-engineered",
+      "Uncomplect this state machine",
+      "Create a drone flyover of Central Park at dusk"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

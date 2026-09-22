@@ -1,39 +1,41 @@
 # skills
 
-A plugin marketplace. Each plugin under `plugins/` ships skills, and sometimes agents, to Claude Code and Codex.
+A plugin marketplace. It ships one plugin, `sk`, carrying every skill and the grug agent to Claude Code and Codex.
 
 ## Layout
 
 ```
-plugins/<plugin>/
-  .claude-plugin/plugin.json   Claude Code manifest
-  .codex-plugin/plugin.json    Codex manifest
-  skills/<skill>/SKILL.md
-  agents/<agent>.md            optional
+.claude-plugin/marketplace.json   Claude Code marketplace
+.agents/plugins/marketplace.json  Codex marketplace
+.agents/.claude-plugin/plugin.json   Claude Code manifest
+.agents/.codex-plugin/plugin.json    Codex manifest
+.agents/agents/<agent>.md
+.agents/skills/<skill>/SKILL.md   everything the plugin ships
+.claude/skills/<skill>/SKILL.md   repo maintenance, deliberately not shipped
+skills-lock.json                  vendored skills, maintained by npx skills
 ```
 
-Two marketplace files list every plugin and must agree: `.claude-plugin/marketplace.json` and `.agents/plugins/marketplace.json`.
+The plugin is rooted at `.agents/`, so its `skills/` is the directory `npx skills` writes to. That is why vendoring needs no wrapper, and why both marketplace files point at `./.agents`. They must otherwise agree.
 
 ## Commands
 
 ```bash
-npm run version              # propagate version and description into every plugin manifest
+npm run version              # propagate version and description into both plugin manifests
 claude plugin validate .     # validate the marketplace
-claude plugin validate plugins/<plugin>
+claude plugin validate .agents
 codex plugin marketplace add .
-codex plugin add <plugin>@stepankuzmin
+codex plugin add sk@stepankuzmin
 ```
 
-## Adding a plugin
+## Adding a skill
 
-1. Create `plugins/<plugin>/` with both manifests and at least one skill.
-2. Add the entry to both marketplace files.
-3. Run `npm run version`.
-4. Add a section to `README.md` with a skill table and the install commands.
-5. Run `claude plugin validate .` and `claude plugin validate plugins/<plugin>`.
+1. Create `.agents/skills/<skill>/SKILL.md`.
+2. Add a row to the skill table in `README.md`.
+3. Revise the plugin description in `.claude-plugin/marketplace.json` if it no longer describes what ships, then run `npm run version`.
+4. Run `claude plugin validate .` and `claude plugin validate .agents`.
 
-`.github/workflows/ci.yml` loops over `plugins/*`, so a new plugin needs no workflow change.
+To vendor a skill from another repo, use `vendor-skill`. It lives in `.claude/skills/`, outside the plugin, so marketplace customers never receive it. Anything under `.agents/skills/` ships.
 
 ## Editing manifests
 
-`version` and `description` in each plugin manifest are generated. Set the description in `.claude-plugin/marketplace.json` and the version in `package.json`, then run `npm run version`. Never edit those two fields by hand.
+`version` and `description` in both plugin manifests are generated. Set the description in `.claude-plugin/marketplace.json` and the version in `package.json`, then run `npm run version`. Never edit those two fields by hand. The Codex `interface` block is hand-written.
