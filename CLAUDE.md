@@ -12,10 +12,9 @@ A plugin marketplace. It ships one plugin, `sk`, carrying every skill and the gr
 .agents/agents/<agent>.md
 .agents/skills/<skill>/SKILL.md   everything the plugin ships
 .claude/skills/<skill>/SKILL.md   repo maintenance, deliberately not shipped
-skills-lock.json                  vendored skills, maintained by npx skills
 ```
 
-The plugin is rooted at `.agents/`, so its `skills/` is the directory `npx skills` writes to. That is why vendoring needs no wrapper, and why both marketplace files point at `./.agents`. They must otherwise agree.
+Both marketplace files point at `./.agents`, the plugin root. They must otherwise agree.
 
 ## Commands
 
@@ -30,11 +29,11 @@ codex plugin add sk@stepankuzmin
 ## Adding a skill
 
 1. Create `.agents/skills/<skill>/SKILL.md`.
-2. Add a row to the skill table in `README.md`.
+2. If it belongs to the main flow, add a row to the skill table in `README.md`. The table lists only the grug skills and `flyover`.
 3. Revise the plugin description in `.claude-plugin/marketplace.json` if it no longer describes what ships, then run `npm run version`.
 4. Run `claude plugin validate .` and `claude plugin validate .agents`.
 
-To vendor a skill from another repo, use `vendor-skill`. It lives in `.claude/skills/`, outside the plugin, so marketplace customers never receive it. Anything under `.agents/skills/` ships.
+To adapt a skill from another repo, or review upstream changes to one already adapted, use `vendor-skill`. It lives in `.claude/skills/`, outside the plugin, so marketplace customers never receive it. Anything under `.agents/skills/` ships.
 
 ## Editing manifests
 
