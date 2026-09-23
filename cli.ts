@@ -65,12 +65,9 @@ function sync(write: boolean): { version: string; changed: string[] } {
   }
 
   for (const { path, description } of plugins) {
-    const manifests = [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"].filter((manifest) =>
-      existsSync(join(root, path, manifest)), // a plugin may not ship every harness's manifest
-    );
-    if (manifests.length === 0) throw new Error(`${path}: no plugin manifest`);
-    for (const manifest of manifests) {
+    for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
       const manifestPath = join(root, path, manifest);
+      if (!existsSync(manifestPath)) throw new Error(`${path}/${manifest}: missing`);
       const json = readJson(manifestPath);
       if (!isRecord(json)) throw new Error(`${manifestPath}: must be an object`);
       let dirty = set(json, "version", version);
