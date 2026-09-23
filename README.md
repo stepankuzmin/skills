@@ -13,13 +13,21 @@ One plugin, `sk`, carrying every skill and the grug agent. Skills invoke as `sk:
 | [`grug-review`](.agents/skills/grug-review/SKILL.md) | Review changed code for correctness bugs and unnecessary complexity, posting only findings backed by a concrete failure scenario or a concrete simpler version. |
 | [`marie-kondo`](.agents/skills/marie-kondo/SKILL.md) | Aggressive refactor pass that cuts code that doesn't earn its keep. |
 | [`uncomplect`](.agents/skills/uncomplect/SKILL.md) | Pressure-test a stateful system or replacement design through Hickey's complection, Ousterhout's deep modules, Young's deletability, DDD boundaries, typed effects, and explicit lifecycle modeling. Vendored from [joelhooks/skills](https://github.com/joelhooks/skills/tree/7c0a930d761bc05f50c3d31cf55ba7f289b45861/skills/uncomplect). |
-| [`how`](.agents/skills/how/SKILL.md) | Explain how a subsystem works, with parallel explorers and one synthesized architectural walkthrough. Vendored from [cursor/plugins](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack/skills/how). |
-| [`why`](.agents/skills/why/SKILL.md) | Investigate why code is built the way it is, one investigator per evidence source, with confidence-tiered citations. Vendored from [cursor/plugins](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack/skills/why). |
-| [`teach`](.agents/skills/teach/SKILL.md) | Run `how` and `why` and weave the results into one plain explanation. Vendored from [cursor/plugins](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack/skills/teach). |
-| [`unslop`](.agents/skills/unslop/SKILL.md) | Cut AI tells from any writing. Vendored from [cursor/plugins](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack/skills/unslop). |
-| [`technical-writing`](.agents/skills/technical-writing/SKILL.md) | Write and review docs, RFCs, PR descriptions, and commit messages with Diátaxis, Google developer style, STE, and Global English. Vendored from [cursor/plugins](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack/skills/technical-writing). |
-| [`typescript-best-practices`](.agents/skills/typescript-best-practices/SKILL.md) | TypeScript rules: discriminated unions, branded types, `unknown` over `any`, no `as` casts, exhaustiveness. Vendored from [cursor/plugins](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack/skills/typescript-best-practices). |
+| [`how`](.agents/skills/how/SKILL.md)† | Explain how a subsystem works, with parallel explorers and one synthesized architectural walkthrough. |
+| [`why`](.agents/skills/why/SKILL.md)† | Investigate why code is built the way it is, one investigator per evidence source, with confidence-tiered citations. |
+| [`teach`](.agents/skills/teach/SKILL.md)† | Run `how` and `why` and weave the results into one plain explanation. |
+| [`unslop`](.agents/skills/unslop/SKILL.md)† | Cut AI tells from any writing. |
+| [`technical-writing`](.agents/skills/technical-writing/SKILL.md)† | Write and review docs, RFCs, PR descriptions, and commit messages with Diátaxis, Google developer style, STE, and Global English. |
+| [`typescript-best-practices`](.agents/skills/typescript-best-practices/SKILL.md)† | TypeScript rules: discriminated unions, branded types, `unknown` over `any`, no `as` casts, exhaustiveness. |
+| [`principle-*`](.agents/skills/)† | 23 short engineering rules, such as `principle-fix-root-causes`, `principle-test-behavior-not-implementation`, and `principle-type-system-discipline`. |
+| [`blast-radius`](.agents/skills/blast-radius/SKILL.md)† | Find what a change breaks beyond the diff, and prove the one fact it's safe because of by running real code. |
+| [`show-me-your-work`](.agents/skills/show-me-your-work/SKILL.md)† | Keep a TSV decision log for long or unattended runs, audited against the transcript. |
+| [`recall`](.agents/skills/recall/SKILL.md)† | Rebuild recent working context from your transcripts and the shared record into a current-state brief. |
+| [`reflect`](.agents/skills/reflect/SKILL.md)† | Review the current session with three subagents and route durable learnings into skill edits. |
+| [`bro`](.agents/skills/bro/SKILL.md)† | Restate the last message in plain language. |
 | [`flyover`](.agents/skills/flyover/SKILL.md) | Turn a text description into a cinematic 3D map flyover: GeoJSON camera waypoints plus a self-contained Mapbox GL JS page. Needs `MAPBOX_ACCESS_TOKEN`. |
+
+† Adapted from [pstack](https://github.com/cursor/plugins/tree/b42effe0aa50f59c693d7e2924714e015e00bf7c/pstack) (MIT) for Claude Code and Codex.
 
 ## Install
 

@@ -22,9 +22,10 @@ SOFTWARE.
 
 ---
 
-The following skills are vendored from other projects under their own licenses.
+The following skills are adapted from other projects under their own licenses.
 
-how, why, teach, unslop, technical-writing, typescript-best-practices
+how, why, teach, unslop, technical-writing, typescript-best-practices, bro,
+blast-radius, show-me-your-work, recall, reflect, and every principle-* skill
 from https://github.com/cursor/plugins (pstack)
 
 MIT License

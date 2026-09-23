@@ -51,6 +51,10 @@ npx --yes skills@latest add "<owner>/<repo>#<sha>" --skill <skill> -y
 That writes `.agents/skills/<skill>/` and records the source and commit in the
 root `skills-lock.json`. Commit both.
 
+Check `git diff skills-lock.json` adds only the skills you asked for: with many
+`--skill` flags, `add` has installed every skill in the source repo. Remove
+extras one name per `remove` call, since `remove a b c -y` removes only some.
+
 Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
 `scripts/`). Append any upstream `LICENSE`/`NOTICE` to `.agents/LICENSE`
 after a `---` line, headed by the skills it covers and their source repo. If

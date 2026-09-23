@@ -8,7 +8,7 @@
     {
       "name": "sk",
       "source": "./.agents",
-      "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, codebase explanation, plain technical writing, TypeScript, and Mapbox GL JS flyovers."
+      "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, codebase explanation, plain technical writing, TypeScript, engineering principles, and Mapbox GL JS flyovers."
     }
   ]
 }

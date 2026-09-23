@@ -42,6 +42,11 @@ If the diff creates dual authority, old and new paths, wrappers around wrappers,
 or policy in callers, simplify it. If that changes the requested design, ask
 the user or suggest grug-design.
 
+The plan is wrong, not the code, when the same workaround repeats, unrelated
+edge cases each need a branch, types need casts or always-set optional fields,
+or callers must know the module's internal rules. Stop and return to
+grug-design instead of patching around it.
+
 ## Cull the diff
 
 Audit every changed line and added file, type, helper, dependency, option,
