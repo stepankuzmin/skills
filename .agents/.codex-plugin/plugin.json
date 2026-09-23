@@ -1,7 +1,7 @@
 {
   "name": "sk",
-  "version": "0.3.0",
-  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, and Mapbox GL JS flyovers.",
+  "version": "0.4.0",
+  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, codebase explanation, plain technical writing, TypeScript, and Mapbox GL JS flyovers.",
   "author": {
     "name": "Stepan Kuzmin",
     "url": "https://github.com/stepankuzmin"
@@ -15,6 +15,9 @@
     "simplification",
     "refactoring",
     "architecture",
+    "explanation",
+    "technical-writing",
+    "typescript",
     "mapbox",
     "gl-js",
     "flyover"
@@ -22,8 +25,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Stepan Kuzmin Skills",
-    "shortDescription": "Grug agent, complexity-cutting skills, Mapbox flyovers",
-    "longDescription": "Grug designs, implements, and reviews the smallest clear change, and cuts code that doesn't earn its keep. Uncomplect pressure-tests a stateful system through Hickey's complection, Ousterhout's deep modules, and Young's deletability. Flyover turns a text description into a cinematic 3D Mapbox GL JS page.",
+    "shortDescription": "Grug agent, complexity-cutting, explanation, and writing skills, Mapbox flyovers",
+    "longDescription": "Grug designs, implements, and reviews the smallest clear change, and cuts code that doesn't earn its keep. Uncomplect pressure-tests a stateful system through Hickey's complection, Ousterhout's deep modules, and Young's deletability. How and why explain how code works and why it is built that way, and teach combines them into a plain walkthrough. Unslop and technical-writing cut AI tells and tighten docs. Typescript-best-practices sets type-system rules for .ts files. Flyover turns a text description into a cinematic 3D Mapbox GL JS page.",
     "developerName": "Stepan Kuzmin",
     "category": "Developer Tools",
     "capabilities": [
@@ -36,6 +39,7 @@
       "Run a grug review on this branch",
       "Ask grug if this is over-engineered",
       "Uncomplect this state machine",
+      "Explain how this subsystem works",
       "Create a drone flyover of Central Park at dusk"
     ],
     "brandColor": "#2563EB"

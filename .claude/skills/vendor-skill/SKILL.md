@@ -52,9 +52,12 @@ That writes `.agents/skills/<skill>/` and records the source and commit in the
 root `skills-lock.json`. Commit both.
 
 Read the fetched `SKILL.md` and everything beside it (`assets/`, `references/`,
-`scripts/`). Copy any upstream `LICENSE`/`NOTICE` to
-`.agents/LICENSE-<skill>`, outside `skills/<skill>/`, because a refetch wipes
-that directory and would drop a notice you are still required to carry.
+`scripts/`). Append any upstream `LICENSE`/`NOTICE` to `.agents/LICENSE`
+after a `---` line, headed by the skills it covers and their source repo. If
+that source already has a section, add the skill to its header. The notice goes
+there, not inside `skills/<skill>/`, because a refetch wipes that directory and
+would drop a notice you are still required to carry. The root `LICENSE` never
+ships, so it can't carry the notice either.
 
 Only rewrite the frontmatter `description` if it doesn't already say when to
 use the skill — this repo's skill frontmatter carries only `name` and
@@ -87,10 +90,13 @@ Each skill moves to its source's current commit and `skills-lock.json` is
 re-pinned. The refetch is a clean sync of `.agents/skills/<skill>/`, not a
 merge: it reverts local edits, restores deleted files, and removes files
 upstream dropped, so `git diff` is exactly what upstream changed. Nothing you
-add inside that directory survives, which is why `LICENSE-<skill>` sits beside
-it. Update the source link in the `README.md` row to the new `ref`.
+add inside that directory survives, which is why its notice lives in
+`.agents/LICENSE`. Update the source link in the `README.md` row to the new
+`ref`, and check whether upstream changed its license.
 
-Drop a vendored skill with `npx --yes skills@latest remove <skill> -y`.
+Drop a vendored skill with `npx --yes skills@latest remove <skill> -y`, then
+remove it from its `.agents/LICENSE` header, and the whole section if no skill
+from that source remains.
 
 Hand-written skills live in `.agents/skills/` too. `add` and `update` only
 touch the directories named in `skills-lock.json`, but a blanket

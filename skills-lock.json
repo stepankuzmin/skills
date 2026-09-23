@@ -1,12 +1,54 @@
 {
   "version": 1,
   "skills": {
+    "how": {
+      "source": "cursor/plugins",
+      "ref": "b42effe0aa50f59c693d7e2924714e015e00bf7c",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/how/SKILL.md",
+      "computedHash": "6e6468c9d9f56cb78259321ca248dc85623a0783269cb4f855023bce5bdacde8"
+    },
+    "teach": {
+      "source": "cursor/plugins",
+      "ref": "b42effe0aa50f59c693d7e2924714e015e00bf7c",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/teach/SKILL.md",
+      "computedHash": "371a2a40807cc1c0611d50b8170b2395f9c0297f7eb475e071018e12aa766bc5"
+    },
+    "technical-writing": {
+      "source": "cursor/plugins",
+      "ref": "b42effe0aa50f59c693d7e2924714e015e00bf7c",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/technical-writing/SKILL.md",
+      "computedHash": "a513ffa8987ff8528c19a76444de3c3954422c53b2393624976937ca326c52e1"
+    },
+    "typescript-best-practices": {
+      "source": "cursor/plugins",
+      "ref": "b42effe0aa50f59c693d7e2924714e015e00bf7c",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/typescript-best-practices/SKILL.md",
+      "computedHash": "b987c46f03f6c918110c2c198aa49fdd39e126f23ba75ae75fb8efe84625e397"
+    },
     "uncomplect": {
       "source": "joelhooks/skills",
       "ref": "7c0a930d761bc05f50c3d31cf55ba7f289b45861",
       "sourceType": "github",
       "skillPath": "skills/uncomplect/SKILL.md",
       "computedHash": "908914cc197f4d4578756b5a08229984282a0b73a9b6dfb4f44ca93e4a35c826"
+    },
+    "unslop": {
+      "source": "cursor/plugins",
+      "ref": "b42effe0aa50f59c693d7e2924714e015e00bf7c",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/unslop/SKILL.md",
+      "computedHash": "6018ca8c329ba87c6b4298207f58d6b773fe23e44ff52a00a9a4d160c19bedc0"
+    },
+    "why": {
+      "source": "cursor/plugins",
+      "ref": "b42effe0aa50f59c693d7e2924714e015e00bf7c",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/why/SKILL.md",
+      "computedHash": "6e9d370de316b7ef0c615d1594af7f8c9656a1ce4aca46a67c76d8f8ce2e4b18"
     }
   }
 }
