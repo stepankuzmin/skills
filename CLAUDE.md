@@ -20,6 +20,7 @@ Both marketplace files point at `./.agents`, the plugin root. They must otherwis
 
 ```bash
 npm run version              # propagate version and description into both plugin manifests
+node cli.ts check            # fail if manifests are out of date; CI and release run it
 claude plugin validate .     # validate the marketplace
 claude plugin validate .agents
 codex plugin marketplace add .

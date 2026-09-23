@@ -50,7 +50,9 @@ function set(record: Record<string, unknown>, key: string, value: string): boole
   return true;
 }
 
-function version(): void {
+// Sync every manifest to package.json and marketplace.json, returning the
+// files that were out of date. With write false, only report them.
+function sync(write: boolean): { version: string; changed: string[] } {
   const pkg = readJson(join(root, "package.json"));
   if (!isRecord(pkg)) throw new Error("package.json: must be an object");
   const version = field(pkg, "version", "package.json");
@@ -65,13 +67,13 @@ function version(): void {
   for (const { path, description } of plugins) {
     for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
       const manifestPath = join(root, path, manifest);
-      if (!existsSync(manifestPath)) continue; // a plugin may not ship every harness's manifest
+      if (!existsSync(manifestPath)) throw new Error(`${path}/${manifest}: missing`);
       const json = readJson(manifestPath);
       if (!isRecord(json)) throw new Error(`${manifestPath}: must be an object`);
       let dirty = set(json, "version", version);
       if (set(json, "description", description)) dirty = true;
       if (dirty) {
-        writeJson(manifestPath, json);
+        if (write) writeJson(manifestPath, json);
         changed.push(`${path}/${manifest}`);
       }
     }
@@ -83,25 +85,43 @@ function version(): void {
     if (description && set(entry, "description", description)) codexDirty = true;
   }
   if (codexDirty) {
-    writeJson(CODEX_MARKETPLACE, codex);
+    if (write) writeJson(CODEX_MARKETPLACE, codex);
     changed.push(".agents/plugins/marketplace.json");
   }
 
-  console.log(`skills ${version}`);
-  console.log(
-    changed.length === 0
-      ? "Manifests already current."
-      : "Synced:\n" + changed.map((file) => `  ${file}`).join("\n"),
-  );
+  return { version, changed };
 }
 
-const USAGE = `usage: cli version
+const list = (files: string[]) => files.map((file) => `  ${file}`).join("\n");
 
-  version    Propagate version and description into every plugin manifest`;
+function version(): void {
+  const { version, changed } = sync(true);
+  console.log(`skills ${version}`);
+  console.log(changed.length === 0 ? "Manifests already current." : "Synced:\n" + list(changed));
+}
 
-if (process.argv[2] !== "version") {
+// Release gate, run by CI on every change so a broken release fails the PR
+// instead of the tag push.
+function check(tag: string | undefined): void {
+  const { version, changed } = sync(false);
+  if (changed.length > 0) {
+    throw new Error(`Out of date, run npm run version:\n${list(changed)}`);
+  }
+  if (tag !== undefined && tag.replace(/^v/, "") !== version) {
+    throw new Error(`Tag ${tag} does not match version ${version}`);
+  }
+  console.log(`skills ${version}: manifests current`);
+}
+
+const USAGE = `usage: cli <command>
+
+  version      Propagate version and description into every plugin manifest
+  check [tag]  Fail if any manifest is out of date, or the tag isn't the version`;
+
+const [command, arg] = process.argv.slice(2);
+if (command === "version") version();
+else if (command === "check") check(arg);
+else {
   console.error(USAGE);
   process.exit(1);
 }
-
-version();
