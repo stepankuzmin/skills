@@ -54,8 +54,9 @@ adapt it:
 - Make harness-specific instructions neutral, so they work in Claude Code and
   Codex: subagent types, model names, config paths, and built-in tools of
   another harness.
-- Remove `disable-model-invocation: true` unless the skill is expensive to run
-  by surprise, like a fan-out over many subagents.
+- Keep only `name` and `description` in the frontmatter. Codex rejects
+  `disable-model-invocation`. For an expensive skill, narrow its description to
+  explicit requests instead.
 - Point references to other skills at skills this plugin ships. Adapt or drop
   the rest.
 - Cut anything this repo's owner doesn't use.

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // The CLI for this marketplace. Run it with no arguments for usage.
 //
-// The two marketplace.json files carry the descriptions by hand.
+// Descriptions are set by hand in .claude-plugin/marketplace.json and copied
+// everywhere else.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = import.meta.dirname;
 const MARKETPLACE = join(root, ".claude-plugin/marketplace.json");
+const CODEX_MARKETPLACE = join(root, ".agents/plugins/marketplace.json");
 
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 
@@ -24,13 +26,19 @@ function field(record: Record<string, unknown>, key: string, where: string): str
 
 // A string source is a local plugin path; an object source is someone else's
 // repo and has no manifest here to update.
-function localPlugins(input: unknown): { path: string; description: string }[] {
+function localPlugins(input: unknown): { name: string; path: string; description: string }[] {
   if (!isRecord(input) || !Array.isArray(input.plugins)) {
     throw new Error(`${MARKETPLACE}: "plugins" must be an array`);
   }
   return input.plugins.flatMap((entry: unknown) =>
     isRecord(entry) && typeof entry.source === "string"
-      ? [{ path: entry.source, description: field(entry, "description", `${MARKETPLACE}: ${entry.source}`) }]
+      ? [
+          {
+            name: field(entry, "name", `${MARKETPLACE}: ${entry.source}`),
+            path: entry.source,
+            description: field(entry, "description", `${MARKETPLACE}: ${entry.source}`),
+          },
+        ]
       : [],
   );
 }
@@ -48,7 +56,13 @@ function version(): void {
   const version = field(pkg, "version", "package.json");
   const changed: string[] = [];
 
-  for (const { path, description } of localPlugins(readJson(MARKETPLACE))) {
+  const plugins = localPlugins(readJson(MARKETPLACE));
+  const codex = readJson(CODEX_MARKETPLACE);
+  if (!isRecord(codex) || !Array.isArray(codex.plugins)) {
+    throw new Error(`${CODEX_MARKETPLACE}: "plugins" must be an array`);
+  }
+
+  for (const { path, description } of plugins) {
     for (const manifest of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
       const manifestPath = join(root, path, manifest);
       if (!existsSync(manifestPath)) continue; // a plugin may not ship every harness's manifest
@@ -61,6 +75,16 @@ function version(): void {
         changed.push(`${path}/${manifest}`);
       }
     }
+  }
+
+  let codexDirty = false;
+  for (const entry of codex.plugins) {
+    const description = isRecord(entry) && plugins.find((plugin) => plugin.name === entry.name)?.description;
+    if (description && set(entry, "description", description)) codexDirty = true;
+  }
+  if (codexDirty) {
+    writeJson(CODEX_MARKETPLACE, codex);
+    changed.push(".agents/plugins/marketplace.json");
   }
 
   console.log(`skills ${version}`);

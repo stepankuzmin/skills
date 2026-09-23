@@ -38,8 +38,6 @@
     "websiteURL": "https://github.com/stepankuzmin/skills",
     "defaultPrompt": [
       "Run a grug review on this branch",
-      "Ask grug if this is over-engineered",
-      "Uncomplect this state machine",
       "Explain how this subsystem works",
       "Create a drone flyover of Central Park at dusk"
     ],

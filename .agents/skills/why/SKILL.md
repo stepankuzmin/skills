@@ -1,7 +1,6 @@
 ---
 name: why
-description: "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, or postmortems. Queries each available evidence source (git and PRs, issues, docs, team chat) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior."
-disable-model-invocation: true
+description: "Use when the user asks to investigate why code is built the way it is: 'why does X work this way', 'why we picked Y', design rationale, regressions, or postmortems. Not for explaining a single error or a quick question. Queries each available evidence source (git and PRs, issues, docs, team chat) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior."
 ---
 
 # Why
