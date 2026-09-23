@@ -44,7 +44,7 @@ jobs:
             actions: read
 
           # The tools this repo's work needs. `claude` and `codex` run the
-          # same plugin validation as ci.yml, `npx` vendors and updates skills,
+          # same plugin validation as ci.yml, `npx` pulls upstream skills to review,
           # and naming WebFetch and WebSearch here clears them from the action's
           # default disallow list. The last two lines only bite on pull
           # requests; the action authenticates `gh` through GH_TOKEN.

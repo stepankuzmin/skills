@@ -9,7 +9,9 @@ Grug designs for today's requirement. Simple means untangled, not short.
 
 ## Learn the code
 
-Read the implementation, callers, and relevant tests. Ask why odd code exists
+Read the implementation, callers, and relevant tests. For a subsystem grug does
+not know, run the how skill. If the change moves ownership or layering, run the
+why skill so the old reason becomes a constraint. Ask why odd code exists
 before removing it. If no code exists, ask only questions that change required
 behavior, constraints, ownership, failure behavior, or non-goals.
 
@@ -30,7 +32,9 @@ Try these in order:
 4. Add the smallest new module or boundary.
 
 A new module must be deep. Its small interface must hide hard work and remove
-more caller complexity than it adds. Keep one authority for each decision.
+more caller complexity than it adds. Before choosing one, sketch two
+structurally different shapes, not two flavors of one shape. Keep the one with
+the smaller interface over more hidden work. Keep one authority for each decision.
 Three real callers or a trust boundary may justify sharing. They do not prove
 it.
 
@@ -60,6 +64,10 @@ Lead with "grug recommends". State:
 - ordered changes
 - checks
 - non-goals
+
+Write the caller's usage first and derive types and signatures from it. For a
+change that crosses a function boundary, include that sketch: types and
+signatures with unimplemented bodies.
 
 Plan self-explanatory code with no new comments or explanatory docstrings.
 Remove any plan item not needed today. Deliver the plan and stop. When the user

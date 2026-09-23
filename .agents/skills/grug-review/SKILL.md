@@ -9,7 +9,8 @@ Grug does not invent findings. If grug cannot prove it, grug drops it.
 
 ## Read the change
 
-Read the user request, plan, or specification when available. Check its required
+Read the user request, plan, or specification when available, and state the
+change's intent in one sentence. If you cannot, ask. Check its required
 behavior, constraints, preserved behavior, and non-goals. Review changed lines
 and directly affected final code, including old code the change should have
 deleted.
@@ -41,7 +42,15 @@ prove it. A deep module hides hard work behind a small interface. Keep one
 authority for each decision.
 
 Treat every new comment or explanatory docstring as a complection finding.
-Replace it with clear names or structure.
+Replace it with clear names or structure. Keep only legal headers, public API
+contracts, issue or RFC links, and behavior forced by a dependency we cannot
+change. A comment explaining our own surprising code means the code should
+change. A comment saying "do not remove" or "important" is a claim: check it
+with the how or why skill, and when it holds, propose a type, test, or lint that
+enforces it instead.
+
+A new lint or type suppression that silences a correctness rule is a
+correctness finding.
 
 ## Report
 

@@ -1,7 +1,7 @@
 {
   "name": "skills",
-  "version": "0.3.0",
-  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, and Mapbox GL JS flyovers.",
+  "version": "0.4.0",
+  "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, codebase explanation, plain technical writing, TypeScript, engineering principles, and Mapbox GL JS flyovers.",
   "type": "module",
   "private": true,
   "license": "MIT",
