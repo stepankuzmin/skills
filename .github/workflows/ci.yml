@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - run: node cli.ts check
       - run: npm install -g @anthropic-ai/claude-code@latest @openai/codex@latest
       - run: claude plugin validate .
       - run: codex plugin marketplace add .
