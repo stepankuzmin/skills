@@ -10,7 +10,7 @@ Grug designs for today's requirement. Simple means untangled, not short.
 ## Learn the code
 
 Read the implementation, callers, and relevant tests. For a subsystem grug does
-not know, run the how skill. If the change moves ownership or layering, run the
+not know, run the grug-explore skill. If the change moves ownership or layering, run the
 why skill so the old reason becomes a constraint. Ask why odd code exists
 before removing it. If no code exists, ask only questions that change required
 behavior, constraints, ownership, failure behavior, or non-goals.
