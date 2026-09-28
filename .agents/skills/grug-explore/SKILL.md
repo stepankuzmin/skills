@@ -74,6 +74,9 @@ Keep tracing until grug can answer all of these from code grug has read:
 - What does it call outside itself, and what calls it?
 - Which tests pin its behavior?
 
+When a question stays open, return to "Map the ground" with the names, types,
+and terms learned so far, and repeat.
+
 Stop early only when an answer depends on something grug cannot read, such as
 a running service or a private dependency, and name that gap. Do not stop
 because the search count feels high, and do not stop after the first plausible
