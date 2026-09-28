@@ -2,6 +2,7 @@
 
 | Skill | Description |
 | --- | --- |
+| [`grug-explore`](.agents/skills/grug-explore/SKILL.md) | Learn how part of the codebase works before changing it, using ripgrep, fzf, git history, and LSP. |
 | [`grug-design`](.agents/skills/grug-design/SKILL.md) | Design the smallest clear change from the existing code, or from your answers when there is no code yet. |
 | [`grug-implement`](.agents/skills/grug-implement/SKILL.md) | Implement a plan or a clear request with the smallest diff. |
 | [`grug-review`](.agents/skills/grug-review/SKILL.md) | Review a diff for bugs and needless complexity. Each finding comes with a failing case or simpler code. |

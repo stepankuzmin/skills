@@ -46,7 +46,7 @@ Replace it with clear names or structure. Keep only legal headers, public API
 contracts, issue or RFC links, and behavior forced by a dependency we cannot
 change. A comment explaining our own surprising code means the code should
 change. A comment saying "do not remove" or "important" is a claim: check it
-with the how or why skill, and when it holds, propose a type, test, or lint that
+with the grug-explore or why skill, and when it holds, propose a type, test, or lint that
 enforces it instead.
 
 A new lint or type suppression that silences a correctness rule is a
