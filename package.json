@@ -1,6 +1,6 @@
 {
   "name": "skills",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Grug agent and skills for clarity-first review, refactoring, architectural replacement, codebase explanation, plain technical writing, TypeScript, engineering principles, and Mapbox GL JS flyovers.",
   "type": "module",
   "private": true,
