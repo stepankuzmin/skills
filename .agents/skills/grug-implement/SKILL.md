@@ -47,30 +47,21 @@ edge cases each need a branch, types need casts or always-set optional fields,
 or callers must know the module's internal rules. Stop and return to
 grug-design instead of patching around it.
 
-## Cull the diff
-
-Audit every changed line and added file, type, helper, dependency, option,
-branch, error handler, test, and comment. Ask what current requirement breaks
-if it is removed. Remove it when the answer is nothing or future flexibility.
-
-Inline trivial single-use code when the caller becomes clearer. Inline
-indirection that hides no work:
-
-- a name for a value used once
-- a factory that only builds a value the type already describes
-- a layer that only renames what it wraps
-- data that exists only to produce a fixed list of literals
-- a context or config value read above the code that needs it, then passed
-  down
-
-Write self-explanatory code without comments or explanatory docstrings. Use
-clear names and structure.
-
 ## Check and report
 
 Run the narrow existing checks that prove the changed behavior. Add a focused
 test only when behavior changed and existing tests cannot catch the regression.
 
-Report only the change, the complection removed, deleted code, checks, and
+Prove claims by running code. The working tree includes the user's
+unreviewed work, so change it only with edits you can undo one at a time:
+break one line, run the test, then undo that edit. To run another version,
+read it with `git show <rev>:<path>` or check it out with `git worktree add`
+in a scratch directory and remove it after. Never run `git checkout`,
+`restore`, `reset`, `stash`, or `clean` on the working tree, and never commit.
+
+When the checks pass, run the grug-cleanup skill on the change.
+
+Open with one sentence, alone in its paragraph: the change and the check
+result. Then give cleanup's report without its opening sentence, and any
 blockers. When the user wants an independent second opinion, suggest
 grug-review.
