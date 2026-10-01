@@ -1,7 +1,7 @@
 ---
 name: grug-explore
 description: Build a working understanding of how part of a codebase works before designing, changing, or reviewing it. Use for "explore X", "get context on X", or when grug must learn unfamiliar code first.
-argument-hint: <topic>
+argument-hint: '[topic ...]'
 model: opus
 allowed-tools: Read Grep Glob LSP Bash(rg *) Bash(fzf *) Bash(git log *) Bash(git show *) Bash(git blame *)
 ---
