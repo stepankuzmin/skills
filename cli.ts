@@ -101,14 +101,11 @@ function version(): void {
 }
 
 // Release gate, run by CI on every change so a broken release fails the PR
-// instead of the tag push.
-function check(tag: string | undefined): void {
+// instead of the release.
+function check(): void {
   const { version, changed } = sync(false);
   if (changed.length > 0) {
     throw new Error(`Out of date, run npm run version:\n${list(changed)}`);
-  }
-  if (tag !== undefined && tag.replace(/^v/, "") !== version) {
-    throw new Error(`Tag ${tag} does not match version ${version}`);
   }
   console.log(`skills ${version}: manifests current`);
 }
@@ -116,11 +113,11 @@ function check(tag: string | undefined): void {
 const USAGE = `usage: cli <command>
 
   version      Propagate version and description into every plugin manifest
-  check [tag]  Fail if any manifest is out of date, or the tag isn't the version`;
+  check        Fail if any manifest is out of date`;
 
-const [command, arg] = process.argv.slice(2);
+const [command] = process.argv.slice(2);
 if (command === "version") version();
-else if (command === "check") check(arg);
+else if (command === "check") check();
 else {
   console.error(USAGE);
   process.exit(1);
